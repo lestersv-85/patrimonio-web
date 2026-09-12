@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Patrimonio">
+<meta name="theme-color" content="#070b11">
+<title>Seguimiento del patrimonio</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/app.css?v=25c4e9c">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand"><div class="logo">SP</div><div><h1>Seguimiento del patrimonio</h1><small id="today"></small></div></div>
+    <div class="spacer"></div>
+    <button class="bell" id="privacy" title="Modo privacidad: ocultar importes" aria-label="Modo privacidad"><svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+    <button class="bell" id="bell" title="Alarmas de coherencia" aria-label="Alarmas"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="cnt hidden" id="bellcnt">0</span></button>
+    <span class="storage" id="storage" title="Origen de los datos"><i></i><span>Cargando…</span></span>
+  </div>
+  <div class="side">
+    <nav class="tabs" id="nav"></nav>
+    <div class="sidebar-extra" id="sidebar-extra"></div>
+  </div>
+  <main class="content" id="view"><div class="loading">Cargando datos…</div></main>
+</div>
+<button class="fab hidden" id="fab" title="Nueva operación" aria-label="Nueva operación">+</button>
+<div class="fullchart hidden" id="fullchart"></div>
+<div class="modal-bg" id="modalbg"><div class="modal" id="modal" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast"></div>
+<script>
+// Si un módulo no llega (caché mezclada, red, bloqueador) la página no se queda en «Cargando datos…» para siempre
+(function () {
+  function fallo(msg) {
+    var v = document.getElementById('view'); if (!v || !v.querySelector('.loading')) return;
+    v.innerHTML = '<div class="note warn">No se pudo cargar la aplicación: ' + String(msg).replace(/</g, '&lt;') + '<br><button class="btn" style="margin-top:.6rem" onclick="location.reload(true)">Recargar</button></div>';
+  }
+  window.addEventListener('error', function (e) { var t = e.target; if (t && (t.tagName === 'SCRIPT' || t.tagName === 'LINK')) fallo('no se descargó ' + (t.src || t.href)); else if (e.message) fallo(e.message); }, true);
+  window.addEventListener('unhandledrejection', function (e) { fallo(e.reason && e.reason.message || e.reason); });
+  setTimeout(function () { fallo('tiempo de espera agotado (40 s). Comprueba la conexión.'); }, 40000);
+})();
+</script>
+<script type="module" src="js/app.js?v=25c4e9c"></script>
+</body>
+</html>
