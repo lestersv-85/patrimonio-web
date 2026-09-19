@@ -1,0 +1,10 @@
+{
+  "name": "Seguimiento del patrimonio",
+  "short_name": "Patrimonio",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#070b11",
+  "theme_color": "#070b11",
+  "lang": "es",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
