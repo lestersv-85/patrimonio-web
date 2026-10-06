@@ -1,8 +1,8 @@
-import { DB } from '../store.js?v=0df0f77';
-import { $, $$, esc, fmtEUR, fmtN, fmtCcy, fmtDate, parseISO, OP_LABEL } from '../util.js?v=0df0f77';
-import { acctName, posOf, opAmounts, divAmounts, sortOps } from '../engine.js?v=0df0f77';
-import { openOpForm, openDivForm } from '../forms.js?v=0df0f77';
-import { exportOpsCSV, exportDivsCSV } from '../export.js?v=0df0f77';
+import { DB } from '../store.js?v=canonical-20261006';
+import { $, $$, esc, fmtEUR, fmtN, fmtCcy, fmtDate, parseISO, OP_LABEL } from '../util.js?v=canonical-20261006';
+import { acctName, posOf, opAmounts, divAmounts, sortOps } from '../engine.js?v=canonical-20261006';
+import { openOpForm, openDivForm } from '../forms.js?v=canonical-20261006';
+import { exportOpsCSV, exportDivsCSV } from '../export.js?v=canonical-20261006';
 
 function inRange(date, r) {
   if (r === 'all') return true; const d = parseISO(date), n = new Date(); const y = n.getFullYear();

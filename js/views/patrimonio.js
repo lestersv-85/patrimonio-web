@@ -1,8 +1,8 @@
 // Patrimonio completo: neto (activos menos deudas), liquidez por plazos, inmuebles con su ficha, proyectos de Reental,
 // rentas recurrentes y cobertura de gastos. Las deudas y el gasto mensual se guardan en Ajustes (settings).
-import { DB, saveSettings } from '../store.js?v=0df0f77';
-import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtDate, cls, sum, todayISO, daysBetween, addDays, help, toast, num } from '../util.js?v=0df0f77';
-import { viviendaValue, divAmounts, opAmounts, posOf, acctName, priceAt, fxAt, replay } from '../engine.js?v=0df0f77';
+import { DB, saveSettings } from '../store.js?v=canonical-20261006';
+import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtDate, cls, sum, todayISO, daysBetween, addDays, help, toast, num } from '../util.js?v=canonical-20261006';
+import { viviendaValue, divAmounts, opAmounts, posOf, acctName, priceAt, fxAt, replay } from '../engine.js?v=canonical-20261006';
 
 const LIQ = [
   ['hoy', 'Hoy', r => r.p.type === 'cash' || ['USDT', 'USDC', 'USDX'].includes(r.p.ticker)],
@@ -76,5 +76,5 @@ export function renderPatrimonio(v, C, { UI, render }) {
   $('#db-save').onclick = async () => { const d = { name: $('#db-name').value.trim() || 'Deuda', amount: num($('#db-amount').value), rate: $('#db-rate').value, payment: num($('#db-payment').value) }; if (!(d.amount > 0)) return toast('Falta el importe'); await saveSettings({ debts: [...debts, d] }); toast('Deuda guardada'); render(); };
   $$('[data-debt-del]', v).forEach(b => b.onclick = async () => { const ds = [...debts]; ds.splice(+b.dataset.debtDel, 1); await saveSettings({ debts: ds }); render(); });
   $('#gasto-save').onclick = async () => { await saveSettings({ gasto_mensual: num($('#gasto').value) }); toast('Gasto guardado'); render(); };
-  $$('[data-hold]', v).forEach(el => el.onclick = async () => { const F = await import('../forms.js?v=0df0f77'); F.openHolding(el.dataset.hold, { rows: allRows }); });
+  $$('[data-hold]', v).forEach(el => el.onclick = async () => { const F = await import('../forms.js?v=canonical-20261006'); F.openHolding(el.dataset.hold, { rows: allRows }); });
 }

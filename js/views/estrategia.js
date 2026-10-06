@@ -1,10 +1,10 @@
 // Estrategia: fase del reloj con su lectura completa, objetivos de la doctrina frente a la cartera, recomendaciones con
 // su explicación visible, y objetivos personales (importe, fecha, aportación necesaria).
-import { DB, saveSettings } from '../store.js?v=0df0f77';
-import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtDate, cls, sum, todayISO, daysBetween, BUCKETS, PHASES, HELP, help, toast, num } from '../util.js?v=0df0f77';
-import { inSelPos, inSelCash, selIsAll, viviendaValue, expandirCubos, saludComposiciones } from '../engine.js?v=0df0f77';
-import { phaseHeaderHTML, currentPhase } from '../clock.js?v=0df0f77';
-import { recommendations, targets } from '../recommend.js?v=0df0f77';
+import { DB, saveSettings } from '../store.js?v=canonical-20261006';
+import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtDate, cls, sum, todayISO, daysBetween, BUCKETS, PHASES, HELP, help, toast, num } from '../util.js?v=canonical-20261006';
+import { inSelPos, inSelCash, selIsAll, viviendaValue, expandirCubos, saludComposiciones } from '../engine.js?v=canonical-20261006';
+import { phaseHeaderHTML, currentPhase } from '../clock.js?v=canonical-20261006';
+import { recommendations, targets } from '../recommend.js?v=canonical-20261006';
 
 const DOCTRINA = [
   ['Cubo 1 · Renta variable', 'El motor: produce el retorno. Núcleo por sectores, tesis acotadas, índice global como válvula, un par de especulativas con stop escrito.'],

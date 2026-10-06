@@ -1,10 +1,10 @@
-import { DB } from '../store.js?v=0df0f77';
-import { $, $$, esc, fmtEUR, fmtK, fmtN, cls, sum, BUCKETS, TYPES, DRAWERS, PALETTE, C as COL, help, typeColor, accountColor, ccyColor, ESTILOS, ESTILO_COLOR} from '../util.js?v=0df0f77';
-import { inSelPos, inSelCash, selIsAll, acctName, groupBy, viviendaValue, expandirCubos, saludComposiciones } from '../engine.js?v=0df0f77';
-import { donut, legendHTML } from '../charts.js?v=0df0f77';
-import { openModal } from '../forms.js?v=0df0f77';
-import { selDescription } from './inicio.js?v=0df0f77';
-import { targets } from '../recommend.js?v=0df0f77';
+import { DB } from '../store.js?v=canonical-20261006';
+import { $, $$, esc, fmtEUR, fmtK, fmtN, cls, sum, BUCKETS, TYPES, DRAWERS, PALETTE, C as COL, help, typeColor, accountColor, ccyColor, ESTILOS, ESTILO_COLOR} from '../util.js?v=canonical-20261006';
+import { inSelPos, inSelCash, selIsAll, acctName, groupBy, viviendaValue, expandirCubos, saludComposiciones } from '../engine.js?v=canonical-20261006';
+import { donut, legendHTML } from '../charts.js?v=canonical-20261006';
+import { openModal } from '../forms.js?v=canonical-20261006';
+import { selDescription } from './inicio.js?v=canonical-20261006';
+import { targets } from '../recommend.js?v=canonical-20261006';
 
 export function renderDistribucion(v, C, { UI, render, filterBarHTML, bindFilterBar }) {
   const rows = C.rows.filter(r => inSelPos(r.p, r.accountId)); let cash = 0; for (const a in C.cashEUR) if (inSelCash(a)) cash += C.cashEUR[a];

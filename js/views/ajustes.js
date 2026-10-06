@@ -1,9 +1,9 @@
-import { DB, saveSettings, localEditCount, clearLocalEdits, signOut, setPassword } from '../store.js?v=0df0f77';
-import { $, $$, esc, fmtN, fmtDate, toast, sum, PHASES } from '../util.js?v=0df0f77';
-import { fxAt, latestAtOrBefore } from '../engine.js?v=0df0f77';
-import { targets, DEFAULT_TARGETS } from '../recommend.js?v=0df0f77';
-import { exportAllXLSX, exportAllCSV, exportOpsCSV, exportDivsCSV, exportPositionsCSV, exportCatalogCSV, exportParaSkills } from '../export.js?v=0df0f77';
-import { importFiliosCSV } from '../forms.js?v=0df0f77';
+import { DB, saveSettings, localEditCount, clearLocalEdits, signOut, setPassword } from '../store.js?v=canonical-20261006';
+import { $, $$, esc, fmtN, fmtDate, toast, sum, PHASES } from '../util.js?v=canonical-20261006';
+import { fxAt, latestAtOrBefore } from '../engine.js?v=canonical-20261006';
+import { targets, DEFAULT_TARGETS } from '../recommend.js?v=canonical-20261006';
+import { exportAllXLSX, exportAllCSV, exportOpsCSV, exportDivsCSV, exportPositionsCSV, exportCatalogCSV, exportParaSkills } from '../export.js?v=canonical-20261006';
+import { importFiliosCSV } from '../forms.js?v=canonical-20261006';
 
 export function renderAjustes(v, C, { render, go }) {
   const T = targets(); const today = new Date().toISOString().slice(0, 10);

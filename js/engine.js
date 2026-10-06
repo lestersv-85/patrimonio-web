@@ -1,7 +1,8 @@
 // Motor de cálculo: posiciones, caja por divisa, coste medio y FIFO, valoración a fecha,
 // flujos de la selección, MWR (TIR), TWR (Dietz modificado), series mensuales.
-import { DB } from './store.js?v=0df0f77';
-import { daysBetween, monthEnd, monthKey, addMonths, todayISO, sum, num } from './util.js?v=0df0f77';
+import {canonicalQuantities} from './quantity-replay.js?v=canonical-20261006';
+import { DB } from './store.js?v=canonical-20261006';
+import { daysBetween, monthEnd, monthKey, addMonths, todayISO, sum, num } from './util.js?v=canonical-20261006';
 
 // ---------- lookups ----------
 const sortedKeysCache = new WeakMap();
@@ -110,11 +111,8 @@ export function replay(cutoff) {
     // lo que quede. Pasó con AVAX en Nexo el 2 abr 2026 (venta de 98,53 seguida de un traspaso de otros
     // 98,53): 825,03 € de coste se quedaron sobre 0,013 títulos y acabaron como 824,92 € de pérdida
     // inventada dentro de «GyP realizadas». Se sigue topando —es lo menos malo— pero se avisa.
-    // Tolerancia relativa del 0,5 %: una retirada total trae la cantidad redondeada del extracto y en
-    // binario cae un pelo por encima de la tenencia (LINK 496,4111 sobre 496,4111), y un traspaso de
-    // fondo puede pedir 8,73 participaciones sobre 8,72. Eso no descuadra nada porque el coste se topa
-    // al 100 %. Lo que hay que ver son los casos como el de AVAX: 98,53 títulos sobre 0,0132.
-    if (q > h.qty * 1.005 + 1e-6) avisos.push({ accountId: h.accountId, positionId: h.positionId, date: cur.date, tipo: cur.tipo, qty: q, disponible: h.qty });
+    // Cada sobregiro se informa, incluidos residuos de precisión. No se cambia el dato.
+    if (q > h.qty) avisos.push({ accountId: h.accountId, positionId: h.positionId, date: cur.date, tipo: cur.tipo, qty: q, disponible: h.qty });
     const frac = h.qty > 1e-12 ? Math.min(1, q / h.qty) : 0; const costOut = h.costEUR * frac, costCcyOut = h.costCcy * frac;
     h.qty -= q; h.costEUR -= costOut; h.costCcy -= costCcyOut;
     let fifoOut = 0, left = q;
@@ -179,6 +177,11 @@ export function replay(cutoff) {
   while (di < divs.length) applyDiv(divs[di++]);
   // Umbral de 1 €: por debajo es ruido de redondeo de las patas y no merece una alarma alta.
   for (const dest in pendingSwitch) for (const x of pendingSwitch[dest]) if (Math.abs(x.costEUR) > 1) avisos.push({ positionId: dest, date: x.date, tipo: 'switch', huerfano: x.costEUR });
+  // Decimal quantities from the recorded decimal representations. No epsilon or clamp.
+  // Cost/FIFO/cash retain their existing independent calculations and warnings.
+  for(const exact of canonicalQuantities(ops.map(o=>({id:o.id,date:o.date,time:o.time,type:o.type,ticker:o.position_id||'CASH_EUR',broker:o.account_id||'',quantity:o.qty})))){
+    const h=H[exact.broker+'|'+exact.ticker];if(h&&!exact.pending)h.qty=exact.quantity;
+  }
   return { H, cash, income, avisos };
 }
 
@@ -208,7 +211,7 @@ export function compute(cutoff, { includeVivienda = false } = {}) {
   const date = cutoff || todayISO(); const R = replay(cutoff);
   const rows = [];
   for (const h of Object.values(R.H)) {
-    if (Math.abs(h.qty) < 1e-9) continue;
+    if (h.qty === 0) continue;
     const p = posOf(h.positionId) || { id: h.positionId, ticker: h.positionId, name: '', currency: 'EUR', type: 'custom' };
     if (!includeVivienda && !isInvest(p)) continue;
     const fx = fxAt(p.currency, date); const pr = priceAt(p.id, date);

@@ -1,10 +1,10 @@
 // Análisis: atribución por posición, concentración, divisa, caída máxima, volatilidad, costes, rotación, escenarios y calidad de datos.
 // Cada bloque declara método y cobertura. Nada aquí es una predicción.
-import { DB, saveSettings } from '../store.js?v=0df0f77';
-import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtDate, fmtYM, cls, sum, todayISO, daysBetween, monthKey, addMonths, parseISO, isoDate, monthEnd, help, toast, num, BUCKETS, TYPES } from '../util.js?v=0df0f77';
-import { compute, inSelPos, inSelCash, selIsAll, monthlySeries, firstOpDate, perf, acctName, acctOf, opAmounts, divAmounts, posOf, replay } from '../engine.js?v=0df0f77';
-import { chart, bars, grid, endLabels } from '../charts.js?v=0df0f77';
-import { selDescription } from './inicio.js?v=0df0f77';
+import { DB, saveSettings } from '../store.js?v=canonical-20261006';
+import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtDate, fmtYM, cls, sum, todayISO, daysBetween, monthKey, addMonths, parseISO, isoDate, monthEnd, help, toast, num, BUCKETS, TYPES } from '../util.js?v=canonical-20261006';
+import { compute, inSelPos, inSelCash, selIsAll, monthlySeries, firstOpDate, perf, acctName, acctOf, opAmounts, divAmounts, posOf, replay } from '../engine.js?v=canonical-20261006';
+import { chart, bars, grid, endLabels } from '../charts.js?v=canonical-20261006';
+import { selDescription } from './inicio.js?v=canonical-20261006';
 
 export function renderAnalisis(v, C, { UI, render, filterBarHTML, bindFilterBar }) {
   const today = todayISO(); const y = today.slice(0, 4); const first = firstOpDate();

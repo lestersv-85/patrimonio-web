@@ -8,9 +8,9 @@
 // (CORS). Lo baja `python3 jobs/fetch_market.py watchlist`, que escribe en `benchmarks` y anota en
 // la fila desde cuándo hay dato. Hasta que corra, el candidato existe pero no se puede dimensionar,
 // y la tabla lo dice en vez de callarlo.
-import { DB, upsert, remove } from '../store.js?v=0df0f77';
-import { simbolosEnCartera, cerradasConMercado } from '../engine.js?v=0df0f77';
-import { $, $$, esc, fmtN, fmtDate, todayISO, uid, toast, TYPES } from '../util.js?v=0df0f77';
+import { DB, upsert, remove } from '../store.js?v=canonical-20261006';
+import { simbolosEnCartera, cerradasConMercado } from '../engine.js?v=canonical-20261006';
+import { $, $$, esc, fmtN, fmtDate, todayISO, uid, toast, TYPES } from '../util.js?v=canonical-20261006';
 
 const TIPOS = { stock: 'Acción', etf: 'ETF', fund: 'Fondo', crypto: 'Cripto' };
 

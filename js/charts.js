@@ -1,5 +1,5 @@
 // Gráficos con Chart.js (global cargado desde cdnjs)
-import { fmtEUR, fmtN, fmtK, fmtPct, esc, sum } from './util.js?v=0df0f77';
+import { fmtEUR, fmtN, fmtK, fmtPct, esc, sum } from './util.js?v=canonical-20261006';
 const charts = {};
 export function chart(id, cfg) {
   const el = document.getElementById(id); if (!el || !window.Chart) return;

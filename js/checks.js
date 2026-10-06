@@ -1,10 +1,10 @@
 // Comprobaciones de coherencia: cada operación tiene que mover el efectivo y las cantidades de forma coherente.
 // Devuelve alarmas con nivel (alta, media, info) para la campana de la cabecera.
-import { DB } from './store.js?v=0df0f77';
-import { compute, replay, opAmounts, divAmounts, posOf, acctOf, acctName, defaultBucket, expandirCubos, saludComposiciones } from './engine.js?v=0df0f77';
-import { fmtEUR, fmtN, fmtDate, todayISO, OP_LABEL, daysBetween, addDays, sum } from './util.js?v=0df0f77';
-import { tesisAEscenarios } from './kelly.js?v=0df0f77';
-import { targets, ORO_IDS } from './recommend.js?v=0df0f77';
+import { DB } from './store.js?v=canonical-20261006';
+import { compute, replay, opAmounts, divAmounts, posOf, acctOf, acctName, defaultBucket, expandirCubos, saludComposiciones } from './engine.js?v=canonical-20261006';
+import { fmtEUR, fmtN, fmtDate, todayISO, OP_LABEL, daysBetween, addDays, sum } from './util.js?v=canonical-20261006';
+import { tesisAEscenarios } from './kelly.js?v=canonical-20261006';
+import { targets, ORO_IDS } from './recommend.js?v=canonical-20261006';
 
 const KNOWN = new Set(['buy', 'sell', 'switch', 'switchBuy', 'spinOff', 'spinOffBuy', 'split', 'scrip', 'stakeReward', 'interest', 'deposit', 'withdrawal', 'commission', 'optionBuy', 'optionSell', 'transfer', 'adjust']);
 const CASH_MOVES = new Set(['buy', 'sell', 'deposit', 'withdrawal', 'interest', 'commission', 'optionBuy', 'optionSell', 'transfer']);
@@ -31,7 +31,7 @@ export function runChecks() {
   for (const av of (replay().avisos || [])) {
     const tk = posOf(av.positionId)?.ticker || av.positionId;
     if (av.huerfano != null) add('alta', 'trasp-' + av.positionId + av.date, `Traspaso sin pata de compra: ${tk} (${fmtDate(av.date)})`, `Se reembolsó una posición para traspasarla a ${tk} y no hay ninguna suscripción que recoja ${fmtEUR(av.huerfano, 2)} de coste. Mientras falte, ese coste no está en ninguna posición y «invertido» sale corto.`, 'movimientos');
-    else add('alta', 'sobregiro-' + av.positionId + av.date + av.tipo, `Se retiran más títulos de los que hay: ${tk} (${fmtDate(av.date)})`, `${OP_LABEL[av.tipo] || av.tipo} de ${fmtN(av.qty, 6)} títulos sobre ${fmtN(av.disponible, 6)} disponibles. El coste medio de la posición queda descuadrado y puede acabar como una pérdida realizada que no ocurrió. Revisa el orden y los duplicados de ese día.`, 'movimientos');
+    else add('alta', 'sobregiro-' + av.positionId + av.date + av.tipo, `Se retiran más títulos de los que hay: ${tk} (${fmtDate(av.date)})`, `${OP_LABEL[av.tipo] || av.tipo} de ${fmtN(av.qty, 6)} títulos sobre ${fmtN(av.disponible, 6)} disponibles. Diferencia calculada: ${String(av.disponible-av.qty)} títulos. El coste medio de la posición queda descuadrado y puede acabar como una pérdida realizada que no ocurrió. Revisa el orden y los duplicados de ese día.`, 'movimientos');
   }
   // 1 bis B. La composición de los fondos: sin ella, un mixto cuenta entero donde no le toca.
   // No es una alarma de doctrina, es de DATO: el reparto por cubos de toda la web depende de esto.

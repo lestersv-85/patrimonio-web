@@ -1,11 +1,11 @@
-import { DB } from '../store.js?v=0df0f77';
-import { runChecks } from '../checks.js?v=0df0f77';
-import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtYM, fmtDate, cls, sum, todayISO, monthKey, addMonths, BUCKETS, TYPES, PALETTE, C as COL, help, typeColor, HELP, kpiTip, parseISO, isoDate, monthEnd } from '../util.js?v=0df0f77';
-import { SEL, selIsAll, inSelPos, inSelCash, perf, perfIndice, monthlySeries, monthlyValueSeries, firstOpDate, viviendaValue, groupBy, benchReturn, divAmounts, opAmounts, posOf, priceAt, fxAt, benchWeights, benchComposite, spReturn, spBench, BENCH_LEGS, cierres, cobertura, sinFiltros, expandirCubos, repartoPastel, comparable } from '../engine.js?v=0df0f77';
-import { chart, donut, legendHTML, pctTick, grid, avgDataset, endLabels } from '../charts.js?v=0df0f77';
-import { phaseLineHTML } from '../clock.js?v=0df0f77';
-import { recommendationsHTML } from '../recommend.js?v=0df0f77';
-import { openOpForm, openDivForm, openHolding } from '../forms.js?v=0df0f77';
+import { DB } from '../store.js?v=canonical-20261006';
+import { runChecks } from '../checks.js?v=canonical-20261006';
+import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtYM, fmtDate, cls, sum, todayISO, monthKey, addMonths, BUCKETS, TYPES, PALETTE, C as COL, help, typeColor, HELP, kpiTip, parseISO, isoDate, monthEnd } from '../util.js?v=canonical-20261006';
+import { SEL, selIsAll, inSelPos, inSelCash, perf, perfIndice, monthlySeries, monthlyValueSeries, firstOpDate, viviendaValue, groupBy, benchReturn, divAmounts, opAmounts, posOf, priceAt, fxAt, benchWeights, benchComposite, spReturn, spBench, BENCH_LEGS, cierres, cobertura, sinFiltros, expandirCubos, repartoPastel, comparable } from '../engine.js?v=canonical-20261006';
+import { chart, donut, legendHTML, pctTick, grid, avgDataset, endLabels } from '../charts.js?v=canonical-20261006';
+import { phaseLineHTML } from '../clock.js?v=canonical-20261006';
+import { recommendationsHTML } from '../recommend.js?v=canonical-20261006';
+import { openOpForm, openDivForm, openHolding } from '../forms.js?v=canonical-20261006';
 
 export function selDescription() {
   if (selIsAll()) return 'Toda la cartera de inversión';

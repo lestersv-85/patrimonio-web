@@ -1,6 +1,7 @@
+import {createOperationWriter} from './canonical-operations.js?v=canonical-ledger-1';
 // Acceso a datos: Supabase (nube) o copia local (snapshot) con cambios en localStorage.
-import { CONFIG } from './config.js?v=0df0f77';
-import { toast, uid } from './util.js?v=0df0f77';
+import { CONFIG } from './config.js?v=canonical-20261006';
+import { toast, uid } from './util.js?v=canonical-20261006';
 
 export const DB = {
   mode: 'local', client: null, user: null, ready: false,
@@ -13,6 +14,26 @@ export const DB = {
   meta: { loadedAt: null, source: '' },
 };
 const LS_EDITS = 'sp-local-edits-v1';
+let operationWriter=null;
+export function pendingCanonicalOperation(){return operationWriter?.pending()?.row||null;}
+async function initOperationWriter(){
+  const key='patrimonio-canonical-pending:'+DB.user.id;
+  operationWriter=createOperationWriter(async(name,args)=>{const {data,error}=await DB.client.rpc(name,args);if(error)throw error;return data;},{
+    read:()=>JSON.parse(sessionStorage.getItem(key)||'null'),write:value=>sessionStorage.setItem(key,JSON.stringify(value)),clear:()=>sessionStorage.removeItem(key)
+  });
+  try{await operationWriter.refresh();DB.operationWriteStatus='Registro canónico conectado';}
+  catch(error){DB.operationWriteStatus='Registro canónico no disponible: '+error.message;}
+}
+async function saveOperation(row){
+  if(DB.mode!=='cloud'||!operationWriter)throw Error('Las operaciones requieren conexión al registro canónico; la copia local es de consulta.');
+  if(DB.operations.some(o=>o.id===row.id))throw Error('Original protegido. Las correcciones requieren conciliación auditada.');
+  const result=await operationWriter.save(row);
+  // Mutate memory only after a confirmed transaction and canonical readback.
+  try{const operations=await fetchAll(DB.client,'operations','*','date');DB.operations=operations;}
+  catch(error){throw Error('Operación confirmada con id '+result.id+'. No se pudo actualizar la vista; recarga antes de registrar otra.');}
+  return { ...row,id:result.id };
+}
+
 
 async function supabase() {
   if (!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY) return null;
@@ -47,6 +68,7 @@ export async function loadAll() {
     DB.mode = 'cloud'; DB.client = client;
     const { data: { session } } = await client.auth.getSession();
     if (!session) { DB.ready = false; return { needLogin: true }; }
+    if(session.user.id!==CONFIG.CANONICAL_OWNER_ID){DB.ready=false;return {needLogin:true,wrongOwner:true};}
     DB.user = session.user;
     // Lo esencial (cuentas, posiciones, operaciones, dividendos, precios, cambios) es obligatorio; el resto puede faltar sin tumbar la app
     const jobs = {
@@ -69,6 +91,7 @@ export async function loadAll() {
     const { accounts, positions, operations, dividends, clock, hist, settings, syncLog, prices, fx, bench, macro, watchlist, paquete } = got;
     Object.assign(DB, { accounts, positions, operations, dividends, clock, filiosHistory: hist, settings, syncLog, watchlist: watchlist || [], prices: compactToMap(prices, 'position_id'), fx: compactToMap(fx, 'ccy'), bench: compactToMap(bench, 'symbol'), macro: compactToMap(macro, 'series'), compactRefresh: paquete?.refreshed_at || null });
     DB.meta = { loadedAt: new Date(), source: 'Supabase' };
+    await initOperationWriter();
   } else {
     DB.mode = 'local';
     const r = await fetch(CONFIG.SNAPSHOT_URL, { cache: 'no-store' });
@@ -146,8 +169,8 @@ function localEdits() { try { return JSON.parse(localStorage.getItem(LS_EDITS) |
 function saveLocalEdits(e) { try { localStorage.setItem(LS_EDITS, JSON.stringify(e)); } catch (err) {} }
 function applyLocalEdits() {
   const e = localEdits();
-  for (const key in e.upserts) { const [table, id] = key.split(':'); const arr = tableArr(table); if (!arr) continue; const i = arr.findIndex(x => x.id === id); if (i >= 0) arr[i] = e.upserts[key]; else arr.push(e.upserts[key]); }
-  for (const key in e.deletes) { const [table, id] = key.split(':'); const arr = tableArr(table); if (!arr) continue; const i = arr.findIndex(x => x.id === id); if (i >= 0) arr.splice(i, 1); }
+  for (const key in e.upserts) { const [table, id] = key.split(':'); if(table==='operations')continue; const arr = tableArr(table); if (!arr) continue; const i = arr.findIndex(x => x.id === id); if (i >= 0) arr[i] = e.upserts[key]; else arr.push(e.upserts[key]); }
+  for (const key in e.deletes) { const [table, id] = key.split(':'); if(table==='operations')continue; const arr = tableArr(table); if (!arr) continue; const i = arr.findIndex(x => x.id === id); if (i >= 0) arr.splice(i, 1); }
   if (e.upserts['settings:main']) DB.settings = e.upserts['settings:main'];
 }
 function tableArr(table) { return { accounts: DB.accounts, positions: DB.positions, operations: DB.operations, dividends: DB.dividends, watchlist: DB.watchlist }[table]; }
@@ -155,6 +178,7 @@ export function localEditCount() { const e = localEdits(); return Object.keys(e.
 export function clearLocalEdits() { localStorage.removeItem(LS_EDITS); }
 
 export async function upsert(table, row) {
+  if(table==='operations')return saveOperation(row);
   row = { ...row }; if (!row.id) row.id = uid(); row.updated_at = new Date().toISOString();
   const arr = tableArr(table);
   if (arr) { const i = arr.findIndex(x => x.id === row.id); if (i >= 0) arr[i] = row; else arr.push(row); }
@@ -170,6 +194,7 @@ export async function upsert(table, row) {
   return row;
 }
 export async function remove(table, id) {
+  if(table==='operations')throw Error('No se borran originales. Se requiere conciliación auditada.');
   const arr = tableArr(table); if (arr) { const i = arr.findIndex(x => x.id === id); if (i >= 0) arr.splice(i, 1); }
   if (DB.mode === 'cloud') { const { error } = await DB.client.from(table).delete().eq('id', id); if (error) { toast('No se pudo borrar: ' + error.message); throw error; } }
   else { const e = localEdits(); delete e.upserts[`${table}:${id}`]; e.deletes[`${table}:${id}`] = true; saveLocalEdits(e); }

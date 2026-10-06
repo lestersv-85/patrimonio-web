@@ -1,7 +1,7 @@
 // Formularios: operación, dividendo, posición, cuenta, ficha de posición, importación manual de CSV de Filios
-import { DB, upsert, remove, savePrice } from './store.js?v=0df0f77';
-import { $, $$, esc, uid, todayISO, nowHM, fmtEUR, fmtN, fmtPct, fmtCcy, fmtDate, cls, num, toast, TYPES, BUCKETS, DRAWERS, OP_LABEL, sum, ESTILOS} from './util.js?v=0df0f77';
-import { posOf, acctOf, acctName, fxAt, priceAt, opAmounts, divAmounts, defaultBucket, sortOps, compute, invalidate, replay } from './engine.js?v=0df0f77';
+import { DB, upsert, remove, savePrice, pendingCanonicalOperation } from './store.js?v=canonical-20261006';
+import { $, $$, esc, uid, todayISO, nowHM, fmtEUR, fmtN, fmtPct, fmtCcy, fmtDate, cls, num, toast, TYPES, BUCKETS, DRAWERS, OP_LABEL, sum, ESTILOS} from './util.js?v=canonical-20261006';
+import { posOf, acctOf, acctName, fxAt, priceAt, opAmounts, divAmounts, defaultBucket, sortOps, compute, invalidate, replay } from './engine.js?v=canonical-20261006';
 
 let rerender = () => {};
 export function setRerender(fn) { rerender = fn; }
@@ -22,7 +22,7 @@ function bindPosSearch(m, searchId, selectId) {
 }
 const accOptions = val => `<option value="">— elige —</option>` + opt(DB.accounts, val, a => a.name, a => a.id);
 const CCYS = ['EUR', 'USD', 'GBP', 'CHF', 'CAD', 'HKD'];
-const MANUAL_OP_TYPES = ['buy', 'sell', 'switch', 'split', 'deposit', 'withdrawal', 'interest', 'commission', 'stakeReward', 'transfer', 'adjust'];
+const MANUAL_OP_TYPES = ['buy', 'sell', 'deposit', 'withdrawal'];
 const ASSET_TYPES = ['buy', 'sell', 'stakeReward', 'adjust', 'switch', 'split'];
 
 // ---------- Ficha de posición ----------
@@ -86,11 +86,13 @@ export function openHolding(key, C) {
 
 // ---------- Operación ----------
 export function openOpForm(op, preset = {}) {
-  const isNew = !op; const fromFilios = op && op.source === 'filios';
+  if(op&&DB.operations.some(o=>o.id===op.id)){toast('Original conservado. Ediciones y anulaciones requieren conciliación auditada.');return;}
+  op=op||pendingCanonicalOperation();
+  const isNew = !op||!DB.operations.some(o=>o.id===op.id); const fromFilios = op && op.source === 'filios';
   op = op ? { ...op } : { id: uid(), type: 'buy', date: todayISO(), time: nowHM(), account_id: preset.account_id || '', position_id: preset.position_id || '', qty: '', price: '', currency: '', commission: 0, commission_ccy: 'EUR', tax: 0, tax_ccy: 'EUR', auto_fx: true, to_account_id: '', description: '', tags: [], source: 'manual' };
   const draw = () => {
     const t = op.type; const p = posOf(op.position_id); const isAsset = ASSET_TYPES.includes(t) && t !== 'adjust' ? true : t === 'adjust';
-    const ccy = isAsset ? (p?.currency || 'EUR') : (op.currency || 'EUR'); op.currency = ccy;
+    const ccy = op.currency || 'EUR'; op.currency = ccy;
     const fx = fxAt(ccy, op.date); const preview = isAsset ? opAmounts({ ...op, currency: ccy, fx, total: num(op.qty) * num(op.price) }) : null;
     openModal(`
       <div class="mhead"><h2>${isNew ? 'Nueva operación' : 'Editar operación'}</h2><button class="btn ghost" data-close>✕</button></div>
@@ -114,14 +116,13 @@ export function openOpForm(op, preset = {}) {
         : `<div class="field"><label>Importe</label><input type="number" step="any" id="f-amt" value="${esc(op.total ?? '')}" inputmode="decimal"></div>
            <div class="field"><label>Divisa</label><select id="f-ccy">${opt(CCYS, ccy)}</select>${ccy !== 'EUR' ? `<span class="hint">Cambio BCE del día: ${fmtN(fx, 5)} · ${fmtEUR(num(op.total) * fx)}</span>` : ''}</div>`}
         <div class="field"><label>Etiquetas</label><input type="text" id="f-tags" value="${esc((op.tags || []).join(', '))}"></div>
-        <div class="field"><label>Notas</label><input type="text" id="f-notes" value="${esc(op.description || '')}"></div>
+        <div class="field"><label>Referencia única del justificante</label><input type="text" id="f-reference" value="${esc(op.execution_ref || '')}" required></div><div class="field"><label>Fuente del movimiento</label><input type="text" id="f-notes" value="${esc(op.description || '')}"></div>
       </div>
-      ${isAsset && p && t === 'buy' && p.price_mode === 'manual' ? `<label class="switch"><input type="checkbox" id="f-updprice" checked> Guardar el precio como último precio de ${esc(p.ticker)}</label>` : ''}
       <div class="actions">${isNew ? '' : '<button class="btn danger left" id="f-del">Borrar</button>'}<button class="btn" data-close>Cancelar</button><button class="btn primary" id="f-save">Guardar operación</button></div>`);
     const m = $('#modal');
     const read = () => {
       op.type = $('#f-type', m).value; op.account_id = $('#f-acc', m).value; op.date = $('#f-date', m).value; op.time = $('#f-time', m).value;
-      op.tags = $('#f-tags', m).value.split(',').map(s => s.trim()).filter(Boolean); op.description = $('#f-notes', m).value;
+      op.tags = $('#f-tags', m).value.split(',').map(s => s.trim()).filter(Boolean); op.description = $('#f-notes', m).value; op.execution_ref = $('#f-reference', m).value;
       if ($('#f-pos', m)) op.position_id = $('#f-pos', m).value; if ($('#f-to', m)) op.to_account_id = $('#f-to', m).value;
       if ($('#f-switchto', m)) { op.switch_to = $('#f-switchto', m).value; op.switch_qty = num($('#f-switchqty', m).value); op.switch_account = op.account_id; }
       if (op.type === 'split') { op.qty = num($('#f-qty', m).value); op.price = 0; op.total = 0; }
@@ -131,7 +132,9 @@ export function openOpForm(op, preset = {}) {
     };
     ['#f-type', '#f-pos', '#f-date', '#f-ccy'].forEach(s => { const el = $(s, m); if (el) el.onchange = () => { if (s === '#f-pos' && el.value === '__new__') { read(); op.position_id = ''; const pending = { ...op }; openPosForm(null, { onSaved: id => openOpForm({ ...pending, position_id: id }) }); return; } read(); draw(); }; });
     bindPosSearch(m, 'f-possearch', 'f-pos');
-    $$('#f-qty,#f-price,#f-comm,#f-tax,#f-amt', m).forEach(el => el.onchange = () => { const id = el.id; read(); draw(); const a = $('#' + id, m); if (a) a.focus(); });
+    $$('#f-qty,#f-price,#f-comm,#f-tax,#f-amt', m).forEach(el => el.onchange = () => {
+      read();const box=$('.preview',m);if(box&&['buy','sell'].includes(op.type)){const a=opAmounts({...op,fx:1});box.innerHTML=`<dl class="kv"><dt>Bruto EUR</dt><dd>${fmtEUR(a.grossEUR)}</dd><dt>Total con costes EUR</dt><dd>${fmtEUR(a.totalEUR)}</dd></dl>`;}
+    });
     $('#f-save', m).onclick = async () => {
       read(); const t = op.type; const isAsset = ASSET_TYPES.includes(t);
       if (!op.account_id) return toast('Elige una cuenta'); if (!op.date) return toast('Falta la fecha');
@@ -139,17 +142,17 @@ export function openOpForm(op, preset = {}) {
       if (t === 'switch' && (!op.switch_to || !(op.switch_qty > 0))) return toast('Indica el fondo de destino y las participaciones que entran');
       if (t === 'transfer' && (!op.to_account_id || op.to_account_id === op.account_id)) return toast('Elige una cuenta de destino distinta');
       if (!isAsset && !(op.total > 0)) return toast('Indica el importe');
-      const ccy = isAsset ? (posOf(op.position_id)?.currency || 'EUR') : op.currency;
+      const ccy = op.currency || 'EUR';
+      if(ccy!=='EUR')return toast('La ruta actual admite liquidación EUR; otras divisas requieren conciliación.');
       const clean = { ...op, currency: ccy, fx: fxAt(ccy, op.date), fx_filios: op.fx_filios ?? null, source: op.source === 'filios' ? 'filios-editado' : 'manual' };
       if (!isAsset) clean.position_id = null; if (t !== 'transfer') delete clean.to_account_id;
       const A = opAmounts(clean); clean.total_eur = Math.round(A.grossEUR * 100) / 100; clean.total_comm_eur = Math.round(A.totalEUR * 100) / 100;
-      delete clean.extra; Object.keys(clean).forEach(k => clean[k] === undefined && delete clean[k]);
-      const upd = $('#f-updprice', m)?.checked; closeModal(); await upsert('operations', clean);
-      if (t === 'switch') { const amt = num(op.qty) * num(op.price); await upsert('operations', { ...clean, id: (clean.id || uid()) + '-in', position_id: op.switch_to, type: 'switchBuy', qty: op.switch_qty, price: op.switch_qty ? amt / op.switch_qty : 0, total: amt, total_eur: amt, total_comm_eur: amt, switch_to: null, switch_qty: null, description: (clean.description || '') + ' (entrada del traspaso)' }); }
-      if (upd && op.price > 0) await savePrice(op.position_id, op.date, op.price, 'manual');
-      toast(isNew ? 'Operación registrada' : 'Operación actualizada'); refresh();
+      Object.keys(clean).forEach(k => clean[k] === undefined && delete clean[k]);
+      const button=$('#f-save',m);button.disabled=true;
+      try{await upsert('operations',clean);closeModal();toast('Operación registrada');refresh();}
+      catch(error){toast(error.message);button.disabled=false;}
     };
-    if ($('#f-del', m)) $('#f-del', m).onclick = async () => { if (confirm('¿Borrar esta operación?')) { closeModal(); await remove('operations', op.id); toast('Operación borrada'); refresh(); } };
+
   };
   draw();
 }
@@ -303,11 +306,12 @@ export async function importFiliosCSV(text, filename, { preview = true } = {}) {
       openModal(`<div class="mhead"><h2>Previsualizar importación</h2><button class="btn ghost" data-close>✕</button></div>
         <dl class="kv"><dt>Archivo</dt><dd>${esc(filename)} · ${isDiv ? 'dividendos' : 'operaciones'}</dd><dt>Filas</dt><dd class="num">${rows.length}${trRows ? ` <span class="muted">(+${trRows} de Trade Republic, ignoradas: esa cuenta se importa desde su propia exportación)</span>` : ''}</dd><dt>Fechas</dt><dd>${dates[0] ? fmtDate(dates[0]) + ' a ' + fmtDate(dates[dates.length - 1]) : '—'}</dd><dt>Nuevas</dt><dd class="num pos">${nuevas}</dd><dt>Ya existentes (se omiten)</dt><dd class="num muted">${repetidas}</dd>${newAcc.size ? `<dt>Cuentas nuevas</dt><dd>${esc([...newAcc].join(', '))}</dd>` : ''}${newPos.size ? `<dt>Posiciones nuevas</dt><dd>${esc([...newPos].slice(0, 20).join(', '))}${newPos.size > 20 ? ` +${newPos.size - 20}` : ''}</dd>` : ''}</dl>
         <div class="note">Una exportación parcial (por ejemplo, solo este mes) es válida: las filas repetidas se detectan por su contenido y no se duplican. Nada se escribe hasta que confirmes.</div>
-        <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="imp-go">Importar ${nuevas} nuevas</button></div>`);
+        <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="imp-go" ${isDiv?'':'disabled'}>${isDiv?'Importar '+nuevas+' nuevas':'Operaciones pendientes de conciliación'}</button></div>`);
       $('#imp-go').onclick = async () => { closeModal(); resolve(await importFiliosCSV(text, filename, { preview: false })); };
       $$('[data-close]', $('#modal')).forEach(b => b.addEventListener('click', () => resolve(null)));
     });
   }
+  if(!isDiv)throw Error('La importación de operaciones requiere un lote canónico auditado; previsualización disponible, escritura deshabilitada.');
   for (let seq = 0; seq < rows.length; seq++) {
     const r = rows[seq]; const acc = ACC_BY_BROKER[r.broker] || (r.broker ? r.broker.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'santander');
     if (r.broker && !DB.accounts.some(a => a.id === acc)) await upsert('accounts', { id: acc, name: r.broker, broker: r.broker, country: '', multi_currency: true, withholds_dest: false });

@@ -1,9 +1,9 @@
 // Taller del índice de referencia: pesos editables y riesgo de la mezcla, calculado con los
 // rendimientos mensuales reales de cada proxy. Los pesos guardados son los que dibuja Inicio.
-import { DB, saveSettings } from '../store.js?v=0df0f77';
-import { $, $$, esc, fmtN, fmtPct, fmtYM, cls, todayISO, monthKey, addMonths, toast, C as COL } from '../util.js?v=0df0f77';
-import { BENCH_LEGS, BENCH_DEFAULT, benchWeights, benchComposite, benchMonthReturn, riskMetrics, nivelRiesgo, spBench, inSelPos, inSelCash, defaultBucket } from '../engine.js?v=0df0f77';
-import { chart, grid, pctTick, endLabels } from '../charts.js?v=0df0f77';
+import { DB, saveSettings } from '../store.js?v=canonical-20261006';
+import { $, $$, esc, fmtN, fmtPct, fmtYM, cls, todayISO, monthKey, addMonths, toast, C as COL } from '../util.js?v=canonical-20261006';
+import { BENCH_LEGS, BENCH_DEFAULT, benchWeights, benchComposite, benchMonthReturn, riskMetrics, nivelRiesgo, spBench, inSelPos, inSelCash, defaultBucket } from '../engine.js?v=canonical-20261006';
+import { chart, grid, pctTick, endLabels } from '../charts.js?v=canonical-20261006';
 
 // Carteras modelo (RV / Oro / Bitcoin / Bonos / Caja). «Trabajo» guarda en este navegador los últimos
 // pesos tocados a mano, para poder saltar a un modelo y volver.

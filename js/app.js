@@ -1,29 +1,29 @@
 // Arranque, navegación, barra de selección y render
-import { DB, loadAll, signIn, signInWithLink, signOut, localEditCount } from './store.js?v=0df0f77';
-import { $, $$, esc, todayISO, fmtDate, toast, BUCKETS, TYPES, HELP } from './util.js?v=0df0f77';
-import { SEL, selIsAll, compute, invalidate } from './engine.js?v=0df0f77';
-import { setupChartDefaults, destroyCharts } from './charts.js?v=0df0f77';
-import { phaseHeaderHTML, phaseLineHTML } from './clock.js?v=0df0f77';
-import { recommendationsHTML } from './recommend.js?v=0df0f77';
-import { renderInicio } from './views/inicio.js?v=0df0f77';
-import { renderCartera } from './views/cartera.js?v=0df0f77';
-import { renderMovimientos } from './views/movimientos.js?v=0df0f77';
-import { renderRendimientos } from './views/rendimientos.js?v=0df0f77';
-import { renderDistribucion } from './views/distribucion.js?v=0df0f77';
-import { renderPosiciones } from './views/posiciones.js?v=0df0f77';
-import { renderCuentas } from './views/cuentas.js?v=0df0f77';
-import { renderAjustes } from './views/ajustes.js?v=0df0f77';
-import { renderImpuestos } from './views/impuestos.js?v=0df0f77';
-import { renderEstrategia } from './views/estrategia.js?v=0df0f77';
-import { renderPatrimonio } from './views/patrimonio.js?v=0df0f77';
-import { renderAnalisis } from './views/analisis.js?v=0df0f77';
-import { renderReferencia } from './views/referencia.js?v=0df0f77';
-import { renderTaller } from './views/taller.js?v=0df0f77';
-import { renderSeguimiento } from './views/seguimiento.js?v=0df0f77';
-import { hacerOrdenables } from './sortable.js?v=0df0f77';
-import { runChecks, dismissedKeys, dismiss, undismissAll } from './checks.js?v=0df0f77';
-import { openModal, closeModal } from './forms.js?v=0df0f77';
-import { openOpForm, setRerender } from './forms.js?v=0df0f77';
+import { DB, loadAll, signIn, signInWithLink, signOut, localEditCount } from './store.js?v=canonical-20261006';
+import { $, $$, esc, todayISO, fmtDate, toast, BUCKETS, TYPES, HELP } from './util.js?v=canonical-20261006';
+import { SEL, selIsAll, compute, invalidate } from './engine.js?v=canonical-20261006';
+import { setupChartDefaults, destroyCharts } from './charts.js?v=canonical-20261006';
+import { phaseHeaderHTML, phaseLineHTML } from './clock.js?v=canonical-20261006';
+import { recommendationsHTML } from './recommend.js?v=canonical-20261006';
+import { renderInicio } from './views/inicio.js?v=canonical-20261006';
+import { renderCartera } from './views/cartera.js?v=canonical-20261006';
+import { renderMovimientos } from './views/movimientos.js?v=canonical-20261006';
+import { renderRendimientos } from './views/rendimientos.js?v=canonical-20261006';
+import { renderDistribucion } from './views/distribucion.js?v=canonical-20261006';
+import { renderPosiciones } from './views/posiciones.js?v=canonical-20261006';
+import { renderCuentas } from './views/cuentas.js?v=canonical-20261006';
+import { renderAjustes } from './views/ajustes.js?v=canonical-20261006';
+import { renderImpuestos } from './views/impuestos.js?v=canonical-20261006';
+import { renderEstrategia } from './views/estrategia.js?v=canonical-20261006';
+import { renderPatrimonio } from './views/patrimonio.js?v=canonical-20261006';
+import { renderAnalisis } from './views/analisis.js?v=canonical-20261006';
+import { renderReferencia } from './views/referencia.js?v=canonical-20261006';
+import { renderTaller } from './views/taller.js?v=canonical-20261006';
+import { renderSeguimiento } from './views/seguimiento.js?v=canonical-20261006';
+import { hacerOrdenables } from './sortable.js?v=canonical-20261006';
+import { runChecks, dismissedKeys, dismiss, undismissAll } from './checks.js?v=canonical-20261006';
+import { openModal, closeModal } from './forms.js?v=canonical-20261006';
+import { openOpForm, setRerender } from './forms.js?v=canonical-20261006';
 
 let _fo = null; try { _fo = localStorage.getItem('sp-filters-open'); } catch {}
 export const UI = { filtersOpen: _fo == null ? window.innerWidth >= 960 : _fo === '1', view: 'inicio', account: 'all', opTab: 'ops', search: '', range: '12m', posFilter: 'held', chartMode: 'cum', chartRange: 'max', perfRange: 'ytd', period: 'ytd', distBase: 'mv' };
@@ -186,7 +186,7 @@ async function boot() {
   setupChartDefaults(); setRerender(render);
   try {
     const r = await loadAll();
-    if (r.needLogin) return renderLogin();
+    if (r.needLogin) return renderLogin(r.wrongOwner?'Usa la cuenta iCloud elegida para esta cartera.':'');
     { const v = (location.hash.match(/^#\/([a-z]+)/) || [])[1]; if (v) UI.view = v; }
     if (DB.mode === 'cloud' && !DB.accounts.length && !DB.positions.length) { toast(`La cuenta ${DB.user?.email || ''} no tiene datos: entra con la cuenta dueña de la cartera`); }
     if (DB.loadWarnings?.length) toast('Carga parcial: ' + DB.loadWarnings.join(' · '));
