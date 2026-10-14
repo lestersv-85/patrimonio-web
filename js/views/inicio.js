@@ -1,11 +1,11 @@
-import { DB } from '../store.js?v=canonical-20261006';
-import { runChecks } from '../checks.js?v=canonical-20261006';
-import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtYM, fmtDate, cls, sum, todayISO, monthKey, addMonths, BUCKETS, TYPES, PALETTE, C as COL, help, typeColor, HELP, kpiTip, parseISO, isoDate, monthEnd } from '../util.js?v=canonical-20261006';
-import { SEL, selIsAll, inSelPos, inSelCash, perf, perfIndice, monthlySeries, monthlyValueSeries, firstOpDate, viviendaValue, groupBy, benchReturn, divAmounts, opAmounts, posOf, priceAt, fxAt, benchWeights, benchComposite, spReturn, spBench, BENCH_LEGS, cierres, cobertura, sinFiltros, expandirCubos, repartoPastel, comparable } from '../engine.js?v=canonical-20261006';
-import { chart, donut, legendHTML, pctTick, grid, avgDataset, endLabels } from '../charts.js?v=canonical-20261006';
-import { phaseLineHTML } from '../clock.js?v=canonical-20261006';
-import { recommendationsHTML } from '../recommend.js?v=canonical-20261006';
-import { openOpForm, openDivForm, openHolding } from '../forms.js?v=canonical-20261006';
+import { DB } from '../store.js?v=documentary-cash-20261014';
+import { runChecks } from '../checks.js?v=documentary-cash-20261014';
+import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtYM, fmtDate, cls, sum, todayISO, monthKey, addMonths, BUCKETS, TYPES, PALETTE, C as COL, help, typeColor, HELP, kpiTip, parseISO, isoDate, monthEnd } from '../util.js?v=documentary-cash-20261014';
+import { SEL, selIsAll, inSelPos, inSelCash, perf, perfIndice, monthlySeries, monthlyValueSeries, firstOpDate, viviendaValue, groupBy, benchReturn, divAmounts, opAmounts, posOf, priceAt, fxAt, benchWeights, benchComposite, spReturn, spBench, BENCH_LEGS, cierres, cobertura, sinFiltros, expandirCubos, repartoPastel, comparable } from '../engine.js?v=documentary-cash-20261014';
+import { chart, donut, legendHTML, pctTick, grid, avgDataset, endLabels } from '../charts.js?v=documentary-cash-20261014';
+import { phaseLineHTML } from '../clock.js?v=documentary-cash-20261014';
+import { recommendationsHTML } from '../recommend.js?v=documentary-cash-20261014';
+import { openOpForm, openDivForm, openHolding } from '../forms.js?v=documentary-cash-20261014';
 
 export function selDescription() {
   if (selIsAll()) return 'Toda la cartera de inversión';

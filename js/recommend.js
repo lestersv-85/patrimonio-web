@@ -1,9 +1,9 @@
 // Recomendaciones de rebalanceo según la doctrina de los cubos, la fase estimada y la selección.
 // Nunca son órdenes: cada una lleva importe, regla de origen y aviso.
-import { DB } from './store.js?v=canonical-20261006';
-import { compute, SEL, selIsAll, inSelPos, inSelCash, defaultBucket, benchReturn, latestAtOrBefore, posOf, expandirCubos, ORO_IDS, esEstable } from './engine.js?v=canonical-20261006';
-import { BUCKETS, DRAWERS, fmtK, fmtN, fmtPct, sum, todayISO, esc } from './util.js?v=canonical-20261006';
-import { currentPhase } from './clock.js?v=canonical-20261006';
+import { DB } from './store.js?v=documentary-cash-20261014';
+import { compute, SEL, selIsAll, inSelPos, inSelCash, defaultBucket, benchReturn, latestAtOrBefore, posOf, expandirCubos, ORO_IDS, esEstable } from './engine.js?v=documentary-cash-20261014';
+import { BUCKETS, DRAWERS, fmtK, fmtN, fmtPct, sum, todayISO, esc } from './util.js?v=documentary-cash-20261014';
+import { currentPhase } from './clock.js?v=documentary-cash-20261014';
 
 // Doctrina fijada por el usuario el 15 sep 2026: caja 10, bonos 10, bitcoin 15, oro 15 y el resto
 // renta variable. De ahí salen los tres cubos rebalanceables: RV 50, oro+cripto 30, RF+caja 20.

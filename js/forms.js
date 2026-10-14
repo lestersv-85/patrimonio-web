@@ -1,7 +1,7 @@
 // Formularios: operación, dividendo, posición, cuenta, ficha de posición, importación manual de CSV de Filios
-import { DB, upsert, remove, savePrice, pendingCanonicalOperation } from './store.js?v=canonical-20261006';
-import { $, $$, esc, uid, todayISO, nowHM, fmtEUR, fmtN, fmtPct, fmtCcy, fmtDate, cls, num, toast, TYPES, BUCKETS, DRAWERS, OP_LABEL, sum, ESTILOS} from './util.js?v=canonical-20261006';
-import { posOf, acctOf, acctName, fxAt, priceAt, opAmounts, divAmounts, defaultBucket, sortOps, compute, invalidate, replay } from './engine.js?v=canonical-20261006';
+import { DB, upsert, remove, savePrice, pendingCanonicalOperation } from './store.js?v=documentary-cash-20261014';
+import { $, $$, esc, uid, todayISO, nowHM, fmtEUR, fmtN, fmtPct, fmtCcy, fmtDate, cls, num, toast, TYPES, BUCKETS, DRAWERS, OP_LABEL, sum, ESTILOS} from './util.js?v=documentary-cash-20261014';
+import { posOf, acctOf, acctName, fxAt, priceAt, opAmounts, divAmounts, defaultBucket, sortOps, compute, invalidate, replay } from './engine.js?v=documentary-cash-20261014';
 
 let rerender = () => {};
 export function setRerender(fn) { rerender = fn; }

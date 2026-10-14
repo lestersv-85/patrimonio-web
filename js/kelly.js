@@ -14,8 +14,8 @@
 //     (Ledoit-Wolf). Sin esto el «óptimo» cambia de signo al mover la ventana un mes.
 //  3. μ por defecto es un prior CAPM (r + β·prima), no la media histórica. La media histórica de un
 //     año dice que Boston Scientific rinde −80 % anual: sirve para enseñar por qué no se usa.
-import { DB } from './store.js?v=canonical-20261006';
-import { latestAtOrBefore } from './engine.js?v=canonical-20261006';
+import { DB } from './store.js?v=documentary-cash-20261014';
+import { latestAtOrBefore } from './engine.js?v=documentary-cash-20261014';
 
 export const HUECO_MAX = 7;      // días naturales: un salto mayor no es un retorno diario
 export const MIN_DIAS = 60;      // por debajo de esto no hay covarianza que merezca el nombre

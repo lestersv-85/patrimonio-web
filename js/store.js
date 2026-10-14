@@ -1,7 +1,7 @@
-import {createOperationWriter} from './canonical-operations.js?v=canonical-ledger-1';
+import {createOperationWriter} from './canonical-operations.js?v=documentary-cash-20261014';
 // Acceso a datos: Supabase (nube) o copia local (snapshot) con cambios en localStorage.
-import { CONFIG } from './config.js?v=canonical-20261006';
-import { toast, uid } from './util.js?v=canonical-20261006';
+import { CONFIG } from './config.js?v=documentary-cash-20261014';
+import { toast, uid } from './util.js?v=documentary-cash-20261014';
 
 export const DB = {
   mode: 'local', client: null, user: null, ready: false,

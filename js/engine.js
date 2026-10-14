@@ -1,8 +1,8 @@
 // Motor de cálculo: posiciones, caja por divisa, coste medio y FIFO, valoración a fecha,
 // flujos de la selección, MWR (TIR), TWR (Dietz modificado), series mensuales.
-import {canonicalQuantities} from './quantity-replay.js?v=canonical-20261006';
-import { DB } from './store.js?v=canonical-20261006';
-import { daysBetween, monthEnd, monthKey, addMonths, todayISO, sum, num } from './util.js?v=canonical-20261006';
+import {canonicalQuantities} from './quantity-replay.js?v=documentary-cash-20261014';
+import { DB } from './store.js?v=documentary-cash-20261014';
+import { daysBetween, monthEnd, monthKey, addMonths, todayISO, sum, num } from './util.js?v=documentary-cash-20261014';
 
 // ---------- lookups ----------
 const sortedKeysCache = new WeakMap();
@@ -76,13 +76,22 @@ export function opAmounts(op) {
   return { ccy, fx, gross, grossEUR, commEUR, taxEUR, totalEUR };
 }
 export function divAmounts(d) {
-  const ccy = d.currency || 'EUR'; const fx = d.fx || fxAt(ccy, d.date);
+  const ccy = d.currency || 'EUR';
+  // A documented cash settlement is already net of all stated withholdings.
+  // Keep gross/tax amounts in their original currency; do not tax that net twice.
+  const settlement = d.extra?.cash_settlement;
+  const documented = settlement?.currency === 'EUR'
+    && settlement.source_type === 'broker_statement'
+    && typeof settlement.source_reference === 'string' && settlement.source_reference.length > 0
+    && Number.isFinite(settlement.net_amount)
+    && Number.isFinite(settlement.fx_eur_per_unit) && settlement.fx_eur_per_unit > 0;
+  const fx = documented ? settlement.fx_eur_per_unit : (d.fx || fxAt(ccy, d.date));
   const gross = num(d.gross) || num(d.shares) * num(d.gross_per_share);
   const wOrig = num(d.withhold_origin); const comm = num(d.commission) * (d.commission_ccy && d.commission_ccy !== ccy ? fxAt(d.commission_ccy, d.date) / fx : 1);
   const net = num(d.net) || (gross - wOrig - comm);
   const grossEUR = gross * fx, wOrigEUR = wOrig * fx, wDestEUR = num(d.withhold_dest_eur);
-  const netEUR = net * fx - wDestEUR;
-  return { ccy, fx, gross, grossEUR, wOrigEUR, wDestEUR, commEUR: comm * fx, net, netEUR, netWithReturnEUR: num(d.net_with_return_eur) || netEUR };
+  const netEUR = documented ? settlement.net_amount : net * fx - wDestEUR;
+  return { ccy, fx, gross, grossEUR, wOrigEUR, wDestEUR, commEUR: comm * fx, net, netEUR, netWithReturnEUR: num(d.net_with_return_eur) || netEUR, ...(documented ? { settlementCurrency: 'EUR' } : {}) };
 }
 const opOrder = { switch: 0, sell: 1, optionSell: 1, withdrawal: 1, commission: 1, spinOff: 2, split: 3, buy: 4, switchBuy: 5, spinOffBuy: 5, deposit: 6, interest: 6, stakeReward: 6, scrip: 6, optionBuy: 4, adjust: 9 };
 export const sortOps = (a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || '') || (opOrder[a.type] ?? 5) - (opOrder[b.type] ?? 5) || String(a.id).localeCompare(String(b.id));
@@ -102,7 +111,7 @@ export function replay(cutoff) {
   const applyDiv = d => {
     const A = divAmounts(d); const h = hold(d.account_id, d.position_id); h.div += A.grossEUR;
     income.divGross += A.grossEUR; income.divNet += A.netEUR;
-    if (d.auto_fx === false && A.ccy !== 'EUR' && acctOf(d.account_id)?.multi_currency) cashAdd(d.account_id, A.ccy, A.net - num(d.withhold_dest_eur) / A.fx); else cashAdd(d.account_id, 'EUR', A.netEUR);
+    if (A.settlementCurrency !== 'EUR' && d.auto_fx === false && A.ccy !== 'EUR' && acctOf(d.account_id)?.multi_currency) cashAdd(d.account_id, A.ccy, A.net - num(d.withhold_dest_eur) / A.fx); else cashAdd(d.account_id, 'EUR', A.netEUR);
   };
   const removeQty = (h, q, { realize = true, proceedsEUR = 0 } = {}) => {
     // Retirar más títulos de los que la posición tiene en ese instante es un dato contradictorio, no

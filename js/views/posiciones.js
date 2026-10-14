@@ -1,7 +1,7 @@
-import { DB } from '../store.js?v=canonical-20261006';
-import { $, $$, esc, fmtCcy, fmtDate, TYPES, DRAWERS, ESTILOS} from '../util.js?v=canonical-20261006';
-import { defaultBucket, priceAt } from '../engine.js?v=canonical-20261006';
-import { openPosForm } from '../forms.js?v=canonical-20261006';
+import { DB } from '../store.js?v=documentary-cash-20261014';
+import { $, $$, esc, fmtCcy, fmtDate, TYPES, DRAWERS, ESTILOS} from '../util.js?v=documentary-cash-20261014';
+import { defaultBucket, priceAt } from '../engine.js?v=documentary-cash-20261014';
+import { openPosForm } from '../forms.js?v=documentary-cash-20261014';
 
 export function renderPosiciones(v, C, { UI, render }) {
   const held = new Set(C.rows.map(r => r.positionId)); const f = UI.posFilter; const q = UI.search.toLowerCase();

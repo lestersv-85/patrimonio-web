@@ -1,6 +1,6 @@
-import { DB } from '../store.js?v=canonical-20261006';
-import { $, $$, esc, fmtEUR, fmtCcy, sum, uid, todayISO, num, toast } from '../util.js?v=canonical-20261006';
-import { openAccForm } from '../forms.js?v=canonical-20261006';
+import { DB } from '../store.js?v=documentary-cash-20261014';
+import { $, $$, esc, fmtEUR, fmtCcy, sum, uid, todayISO, num, toast } from '../util.js?v=documentary-cash-20261014';
+import { openAccForm } from '../forms.js?v=documentary-cash-20261014';
 
 export function renderCuentas(v, C) {
   v.innerHTML = `

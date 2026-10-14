@@ -1,9 +1,9 @@
-import { DB, saveSettings, localEditCount, clearLocalEdits, signOut, setPassword } from '../store.js?v=canonical-20261006';
-import { $, $$, esc, fmtN, fmtDate, toast, sum, PHASES } from '../util.js?v=canonical-20261006';
-import { fxAt, latestAtOrBefore } from '../engine.js?v=canonical-20261006';
-import { targets, DEFAULT_TARGETS } from '../recommend.js?v=canonical-20261006';
-import { exportAllXLSX, exportAllCSV, exportOpsCSV, exportDivsCSV, exportPositionsCSV, exportCatalogCSV, exportParaSkills } from '../export.js?v=canonical-20261006';
-import { importFiliosCSV } from '../forms.js?v=canonical-20261006';
+import { DB, saveSettings, localEditCount, clearLocalEdits, signOut, setPassword } from '../store.js?v=documentary-cash-20261014';
+import { $, $$, esc, fmtN, fmtDate, toast, sum, PHASES } from '../util.js?v=documentary-cash-20261014';
+import { fxAt, latestAtOrBefore } from '../engine.js?v=documentary-cash-20261014';
+import { targets, DEFAULT_TARGETS } from '../recommend.js?v=documentary-cash-20261014';
+import { exportAllXLSX, exportAllCSV, exportOpsCSV, exportDivsCSV, exportPositionsCSV, exportCatalogCSV, exportParaSkills } from '../export.js?v=documentary-cash-20261014';
+import { importFiliosCSV } from '../forms.js?v=documentary-cash-20261014';
 
 export function renderAjustes(v, C, { render, go }) {
   const T = targets(); const today = new Date().toISOString().slice(0, 10);

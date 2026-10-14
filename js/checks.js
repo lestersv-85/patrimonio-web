@@ -1,10 +1,10 @@
 // Comprobaciones de coherencia: cada operación tiene que mover el efectivo y las cantidades de forma coherente.
 // Devuelve alarmas con nivel (alta, media, info) para la campana de la cabecera.
-import { DB } from './store.js?v=canonical-20261006';
-import { compute, replay, opAmounts, divAmounts, posOf, acctOf, acctName, defaultBucket, expandirCubos, saludComposiciones } from './engine.js?v=canonical-20261006';
-import { fmtEUR, fmtN, fmtDate, todayISO, OP_LABEL, daysBetween, addDays, sum } from './util.js?v=canonical-20261006';
-import { tesisAEscenarios } from './kelly.js?v=canonical-20261006';
-import { targets, ORO_IDS } from './recommend.js?v=canonical-20261006';
+import { DB } from './store.js?v=documentary-cash-20261014';
+import { compute, replay, opAmounts, divAmounts, posOf, acctOf, acctName, defaultBucket, expandirCubos, saludComposiciones } from './engine.js?v=documentary-cash-20261014';
+import { fmtEUR, fmtN, fmtDate, todayISO, OP_LABEL, daysBetween, addDays, sum } from './util.js?v=documentary-cash-20261014';
+import { tesisAEscenarios } from './kelly.js?v=documentary-cash-20261014';
+import { targets, ORO_IDS } from './recommend.js?v=documentary-cash-20261014';
 
 const KNOWN = new Set(['buy', 'sell', 'switch', 'switchBuy', 'spinOff', 'spinOffBuy', 'split', 'scrip', 'stakeReward', 'interest', 'deposit', 'withdrawal', 'commission', 'optionBuy', 'optionSell', 'transfer', 'adjust']);
 const CASH_MOVES = new Set(['buy', 'sell', 'deposit', 'withdrawal', 'interest', 'commission', 'optionBuy', 'optionSell', 'transfer']);
