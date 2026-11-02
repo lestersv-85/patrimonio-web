@@ -1,29 +1,30 @@
 // Arranque, navegación, barra de selección y render
-import { DB, loadAll, signIn, signInWithLink, signOut, localEditCount } from './store.js?v=documentary-cash-20261014';
-import { $, $$, esc, todayISO, fmtDate, toast, BUCKETS, TYPES, HELP } from './util.js?v=documentary-cash-20261014';
-import { SEL, selIsAll, compute, invalidate } from './engine.js?v=documentary-cash-20261014';
-import { setupChartDefaults, destroyCharts } from './charts.js?v=documentary-cash-20261014';
-import { phaseHeaderHTML, phaseLineHTML } from './clock.js?v=documentary-cash-20261014';
-import { recommendationsHTML } from './recommend.js?v=documentary-cash-20261014';
-import { renderInicio } from './views/inicio.js?v=documentary-cash-20261014';
-import { renderCartera } from './views/cartera.js?v=documentary-cash-20261014';
-import { renderMovimientos } from './views/movimientos.js?v=documentary-cash-20261014';
-import { renderRendimientos } from './views/rendimientos.js?v=documentary-cash-20261014';
-import { renderDistribucion } from './views/distribucion.js?v=documentary-cash-20261014';
-import { renderPosiciones } from './views/posiciones.js?v=documentary-cash-20261014';
-import { renderCuentas } from './views/cuentas.js?v=documentary-cash-20261014';
-import { renderAjustes } from './views/ajustes.js?v=documentary-cash-20261014';
-import { renderImpuestos } from './views/impuestos.js?v=documentary-cash-20261014';
-import { renderEstrategia } from './views/estrategia.js?v=documentary-cash-20261014';
-import { renderPatrimonio } from './views/patrimonio.js?v=documentary-cash-20261014';
-import { renderAnalisis } from './views/analisis.js?v=documentary-cash-20261014';
-import { renderReferencia } from './views/referencia.js?v=documentary-cash-20261014';
-import { renderTaller } from './views/taller.js?v=documentary-cash-20261014';
-import { renderSeguimiento } from './views/seguimiento.js?v=documentary-cash-20261014';
-import { hacerOrdenables } from './sortable.js?v=documentary-cash-20261014';
-import { runChecks, dismissedKeys, dismiss, undismissAll } from './checks.js?v=documentary-cash-20261014';
-import { openModal, closeModal } from './forms.js?v=documentary-cash-20261014';
-import { openOpForm, setRerender } from './forms.js?v=documentary-cash-20261014';
+import { DB, loadAll, signIn, signInWithLink, signOut, localEditCount } from './store.js?v=bb18823';
+import { $, $$, esc, todayISO, fmtDate, toast, BUCKETS, TYPES, HELP } from './util.js?v=bb18823';
+import { SEL, selIsAll, compute, invalidate } from './engine.js?v=bb18823';
+import { setupChartDefaults, destroyCharts } from './charts.js?v=bb18823';
+import { phaseHeaderHTML, phaseLineHTML } from './clock.js?v=bb18823';
+import { recommendationsHTML } from './recommend.js?v=bb18823';
+import { renderInicio } from './views/inicio.js?v=bb18823';
+import { renderCartera } from './views/cartera.js?v=bb18823';
+import { renderMovimientos } from './views/movimientos.js?v=bb18823';
+import { renderRendimientos } from './views/rendimientos.js?v=bb18823';
+import { renderDistribucion } from './views/distribucion.js?v=bb18823';
+import { renderPosiciones } from './views/posiciones.js?v=bb18823';
+import { renderCuentas } from './views/cuentas.js?v=bb18823';
+import { renderAjustes } from './views/ajustes.js?v=bb18823';
+import { renderImpuestos } from './views/impuestos.js?v=bb18823';
+import { renderEstrategia } from './views/estrategia.js?v=bb18823';
+import { renderPatrimonio } from './views/patrimonio.js?v=bb18823';
+import { renderAnalisis } from './views/analisis.js?v=bb18823';
+import { renderReferencia } from './views/referencia.js?v=bb18823';
+import { renderLws } from './views/lws.js?v=bb18823';
+import { renderTaller } from './views/taller.js?v=bb18823';
+import { renderSeguimiento } from './views/seguimiento.js?v=bb18823';
+import { hacerOrdenables } from './sortable.js?v=bb18823';
+import { runChecks, dismissedKeys, dismiss, undismissAll } from './checks.js?v=bb18823';
+import { openModal, closeModal } from './forms.js?v=bb18823';
+import { openOpForm, setRerender } from './forms.js?v=bb18823';
 
 let _fo = null; try { _fo = localStorage.getItem('sp-filters-open'); } catch {}
 export const UI = { filtersOpen: _fo == null ? window.innerWidth >= 960 : _fo === '1', view: 'inicio', account: 'all', opTab: 'ops', search: '', range: '12m', posFilter: 'held', chartMode: 'cum', chartRange: 'max', perfRange: 'ytd', period: 'ytd', distBase: 'mv' };
@@ -49,10 +50,11 @@ const ICONS = {
   ajustes: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   tamanos: '<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20V8"/></svg>',
   seguimiento: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/><path d="M11 8v6M8 11h6"/></svg>',
+  lws: '<svg viewBox="0 0 24 24"><path d="M4 19h16M6 15V9M12 15V5M18 15v-4"/></svg>',
   mas: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
 };
-const NAV = [['inicio', 'Inicio', 'both'], ['cartera', 'Cartera', 'desk'], ['patrimonio', 'Patrimonio', 'desk'], ['movimientos', 'Movimientos', 'both'], ['rendimientos', 'Rendimientos', 'both'], ['distribucion', 'Distribución', 'both'], ['analisis', 'Análisis', 'desk'], ['posiciones', 'Posiciones', 'desk'], ['cuentas', 'Cuentas', 'desk'], ['impuestos', 'Impuestos', 'desk'], ['estrategia', 'Estrategia', 'desk'], ['referencia', 'Referencia', 'desk'], ['tamanos', 'Dimensionado', 'desk'], ['seguimiento', 'Seguimiento', 'desk'], ['ajustes', 'Ajustes', 'desk'], ['mas', 'Más', 'mob']];
-const MAS_VIEWS = ['cartera', 'patrimonio', 'analisis', 'posiciones', 'cuentas', 'impuestos', 'estrategia', 'referencia', 'tamanos', 'seguimiento', 'ajustes'];
+const NAV = [['inicio', 'Inicio', 'both'], ['cartera', 'Cartera', 'desk'], ['patrimonio', 'Patrimonio', 'desk'], ['movimientos', 'Movimientos', 'both'], ['rendimientos', 'Rendimientos', 'both'], ['distribucion', 'Distribución', 'both'], ['analisis', 'Análisis', 'desk'], ['posiciones', 'Posiciones', 'desk'], ['cuentas', 'Cuentas', 'desk'], ['impuestos', 'Impuestos', 'desk'], ['estrategia', 'Estrategia', 'desk'], ['referencia', 'Referencia', 'desk'], ['tamanos', 'Dimensionado', 'desk'], ['lws', 'Método LWS', 'desk'], ['seguimiento', 'Seguimiento', 'desk'], ['ajustes', 'Ajustes', 'desk'], ['mas', 'Más', 'mob']];
+const MAS_VIEWS = ['cartera', 'patrimonio', 'analisis', 'posiciones', 'cuentas', 'impuestos', 'estrategia', 'referencia', 'tamanos', 'lws', 'seguimiento', 'ajustes'];
 
 function renderNav() { $('#nav').innerHTML = NAV.map(([k, l, w]) => `<button class="${w === 'both' ? '' : w} ${UI.view === k || (k === 'mas' && MAS_VIEWS.includes(UI.view)) ? 'on' : ''}" data-view="${k}">${ICONS[k]}<span>${l}</span></button>`).join(''); }
 export function go(v, push = true) { UI.view = v; saveUI(); if (push && location.hash !== '#/' + v) history.pushState(null, '', '#/' + v); render(); window.scrollTo(0, 0); }
@@ -107,7 +109,7 @@ export function render() {
   try {
     renderNav(); renderStorage(); destroyCharts();
     const v = $('#view'); const C = compute();
-    const views = { inicio: renderInicio, cartera: renderCartera, patrimonio: renderPatrimonio, analisis: renderAnalisis, movimientos: renderMovimientos, rendimientos: renderRendimientos, distribucion: renderDistribucion, posiciones: renderPosiciones, cuentas: renderCuentas, impuestos: renderImpuestos, estrategia: renderEstrategia, referencia: renderReferencia, tamanos: renderTaller, seguimiento: renderSeguimiento, ajustes: renderAjustes, mas: renderMas };
+    const views = { inicio: renderInicio, cartera: renderCartera, patrimonio: renderPatrimonio, analisis: renderAnalisis, movimientos: renderMovimientos, rendimientos: renderRendimientos, distribucion: renderDistribucion, posiciones: renderPosiciones, cuentas: renderCuentas, impuestos: renderImpuestos, estrategia: renderEstrategia, referencia: renderReferencia, tamanos: renderTaller, lws: renderLws, seguimiento: renderSeguimiento, ajustes: renderAjustes, mas: renderMas };
     (views[UI.view] || renderInicio)(v, C, { UI, render, go, filterBarHTML, bindFilterBar });
     $('#fab').classList.toggle('hidden', !['inicio', 'cartera', 'movimientos'].includes(UI.view));
     hacerOrdenables(v);   // todas las tablas se ordenan pulsando su cabecera
@@ -117,7 +119,7 @@ export function render() {
   rendering = false;
 }
 function renderMas(v) {
-  const items = [['cartera', 'Cartera', 'Tabla completa de posiciones valoradas'], ['patrimonio', 'Patrimonio', 'Neto, deudas, liquidez, inmuebles y Reental'], ['analisis', 'Análisis', 'Atribución, concentración, divisa, caídas, volatilidad, costes y escenarios'], ['posiciones', 'Posiciones', 'Catálogo, precios, cubos y regiones'], ['cuentas', 'Cuentas', 'Brókers, wallets y efectivo'], ['impuestos', 'Impuestos', 'Resumen fiscal por ejercicio, FIFO, dividendos y modelo 720'], ['estrategia', 'Estrategia', 'Reloj de inversión, doctrina, recomendaciones y objetivos'], ['referencia', 'Referencia', 'Pesos del índice compuesto, riesgo, upside y caída máxima'], ['tamanos', 'Dimensionado', 'Cuánto poner en cada posición: criterio de Kelly con tus series reales'], ['seguimiento', 'Seguimiento', 'Candidatos que aún no tienes, para dimensionarlos junto a la cartera'], ['ajustes', 'Ajustes', 'Objetivos, sincronización, exportar y restaurar']];
+  const items = [['cartera', 'Cartera', 'Tabla completa de posiciones valoradas'], ['patrimonio', 'Patrimonio', 'Neto, deudas, liquidez, inmuebles y Reental'], ['analisis', 'Análisis', 'Atribución, concentración, divisa, caídas, volatilidad, costes y escenarios'], ['posiciones', 'Posiciones', 'Catálogo, precios, cubos y regiones'], ['cuentas', 'Cuentas', 'Brókers, wallets y efectivo'], ['impuestos', 'Impuestos', 'Resumen fiscal por ejercicio, FIFO, dividendos y modelo 720'], ['estrategia', 'Estrategia', 'Reloj de inversión, doctrina, recomendaciones y objetivos'], ['referencia', 'Referencia', 'Pesos del índice compuesto, riesgo, upside y caída máxima'], ['tamanos', 'Dimensionado', 'Cuánto poner en cada posición: criterio de Kelly con tus series reales'], ['lws', 'Método LWS', 'Análisis privado y configuración del método'], ['seguimiento', 'Seguimiento', 'Candidatos que aún no tienes, para dimensionarlos junto a la cartera'], ['ajustes', 'Ajustes', 'Objetivos, sincronización, exportar y restaurar']];
   v.innerHTML = `<h2>Más</h2><div class="menu">${items.map(([k, t, d]) => `<div class="card it" data-v="${k}">${ICONS[k]}<div><div class="t">${t}</div><div class="d">${d}</div></div></div>`).join('')}</div><div class="card pad"><h3 class="tip" tabindex="0" data-tip="${esc(HELP.fase)}">Fase y recomendaciones IA <span class="q">?</span></h3>${phaseHeaderHTML()}${recommendationsHTML()}</div>`;
   $$('[data-v]', v).forEach(el => el.onclick = () => go(el.dataset.v));
 }
@@ -186,7 +188,7 @@ async function boot() {
   setupChartDefaults(); setRerender(render);
   try {
     const r = await loadAll();
-    if (r.needLogin) return renderLogin(r.wrongOwner?'Usa la cuenta iCloud elegida para esta cartera.':'');
+    if (r.needLogin) return renderLogin();
     { const v = (location.hash.match(/^#\/([a-z]+)/) || [])[1]; if (v) UI.view = v; }
     if (DB.mode === 'cloud' && !DB.accounts.length && !DB.positions.length) { toast(`La cuenta ${DB.user?.email || ''} no tiene datos: entra con la cuenta dueña de la cartera`); }
     if (DB.loadWarnings?.length) toast('Carga parcial: ' + DB.loadWarnings.join(' · '));

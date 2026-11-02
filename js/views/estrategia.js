@@ -1,10 +1,10 @@
 // Estrategia: fase del reloj con su lectura completa, objetivos de la doctrina frente a la cartera, recomendaciones con
 // su explicación visible, y objetivos personales (importe, fecha, aportación necesaria).
-import { DB, saveSettings } from '../store.js?v=documentary-cash-20261014';
-import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtDate, cls, sum, todayISO, daysBetween, BUCKETS, PHASES, HELP, help, toast, num } from '../util.js?v=documentary-cash-20261014';
-import { inSelPos, inSelCash, selIsAll, viviendaValue, expandirCubos, saludComposiciones } from '../engine.js?v=documentary-cash-20261014';
-import { phaseHeaderHTML, currentPhase } from '../clock.js?v=documentary-cash-20261014';
-import { recommendations, targets } from '../recommend.js?v=documentary-cash-20261014';
+import { DB, saveSettings } from '../store.js?v=bb18823';
+import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtDate, cls, sum, todayISO, daysBetween, BUCKETS, PHASES, HELP, help, toast, num } from '../util.js?v=bb18823';
+import { inSelPos, inSelCash, selIsAll, viviendaValue, expandirCubos, saludComposiciones } from '../engine.js?v=bb18823';
+import { phaseHeaderHTML, currentPhase } from '../clock.js?v=bb18823';
+import { recommendations, targets } from '../recommend.js?v=bb18823';
 
 const DOCTRINA = [
   ['Cubo 1 · Renta variable', 'El motor: produce el retorno. Núcleo por sectores, tesis acotadas, índice global como válvula, un par de especulativas con stop escrito.'],

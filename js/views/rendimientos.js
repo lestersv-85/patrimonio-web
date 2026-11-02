@@ -1,10 +1,10 @@
-import { DB } from '../store.js?v=documentary-cash-20261014';
-import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtYM, fmtDate, cls, sum, todayISO, monthKey, addMonths, monthEnd, isoDate, parseISO, help, C as COL, kpiTip, addDays } from '../util.js?v=documentary-cash-20261014';
-import { SEL, selIsAll, inSelPos, inSelCash, perf, monthlySeries, firstOpDate, replay, opAmounts, divAmounts, posOf, benchReturn, spReturn, spBench, viviendaValue, priceAt, fxAt, comparable } from '../engine.js?v=documentary-cash-20261014';
-import { chart, bars, line, grid, pctTick, avgDataset, endLabels } from '../charts.js?v=documentary-cash-20261014';
-import { openHolding } from '../forms.js?v=documentary-cash-20261014';
-import { selDescription } from './inicio.js?v=documentary-cash-20261014';
-import { exportPerfCSV } from '../export.js?v=documentary-cash-20261014';
+import { DB } from '../store.js?v=bb18823';
+import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtYM, fmtDate, cls, sum, todayISO, monthKey, addMonths, monthEnd, isoDate, parseISO, help, C as COL, kpiTip, addDays } from '../util.js?v=bb18823';
+import { SEL, selIsAll, inSelPos, inSelCash, perf, monthlySeries, firstOpDate, replay, opAmounts, divAmounts, posOf, benchReturn, spReturn, spBench, viviendaValue, priceAt, fxAt, comparable } from '../engine.js?v=bb18823';
+import { chart, bars, line, grid, pctTick, avgDataset, endLabels } from '../charts.js?v=bb18823';
+import { openHolding } from '../forms.js?v=bb18823';
+import { selDescription } from './inicio.js?v=bb18823';
+import { exportPerfCSV } from '../export.js?v=bb18823';
 
 function adjValOf(a, b) {
   return sum(DB.operations.filter(o => o.type === 'adjust' && o.date > a && o.date <= b && inSelPos(posOf(o.position_id) || {}, o.account_id)), o => { const p = priceAt(o.position_id, o.date); const pos = posOf(o.position_id); return (o.qty || 0) * (p ? p.price : (o.price || 0)) * fxAt(pos?.currency, o.date); });

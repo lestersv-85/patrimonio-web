@@ -1,11 +1,11 @@
-import { DB } from '../store.js?v=documentary-cash-20261014';
-import { runChecks } from '../checks.js?v=documentary-cash-20261014';
-import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtYM, fmtDate, cls, sum, todayISO, monthKey, addMonths, BUCKETS, TYPES, PALETTE, C as COL, help, typeColor, HELP, kpiTip, parseISO, isoDate, monthEnd } from '../util.js?v=documentary-cash-20261014';
-import { SEL, selIsAll, inSelPos, inSelCash, perf, perfIndice, monthlySeries, monthlyValueSeries, firstOpDate, viviendaValue, groupBy, benchReturn, divAmounts, opAmounts, posOf, priceAt, fxAt, benchWeights, benchComposite, spReturn, spBench, BENCH_LEGS, cierres, cobertura, sinFiltros, expandirCubos, repartoPastel, comparable } from '../engine.js?v=documentary-cash-20261014';
-import { chart, donut, legendHTML, pctTick, grid, avgDataset, endLabels } from '../charts.js?v=documentary-cash-20261014';
-import { phaseLineHTML } from '../clock.js?v=documentary-cash-20261014';
-import { recommendationsHTML } from '../recommend.js?v=documentary-cash-20261014';
-import { openOpForm, openDivForm, openHolding } from '../forms.js?v=documentary-cash-20261014';
+import { DB } from '../store.js?v=bb18823';
+import { runChecks } from '../checks.js?v=bb18823';
+import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtYM, fmtDate, cls, sum, todayISO, monthKey, addMonths, BUCKETS, TYPES, PALETTE, C as COL, help, typeColor, HELP, kpiTip, parseISO, isoDate, monthEnd } from '../util.js?v=bb18823';
+import { SEL, selIsAll, inSelPos, inSelCash, perf, perfIndice, monthlySeries, monthlyValueSeries, firstOpDate, viviendaValue, groupBy, benchReturn, divAmounts, opAmounts, posOf, priceAt, fxAt, benchWeights, benchComposite, spReturn, spBench, BENCH_LEGS, cierres, cobertura, sinFiltros, expandirCubos, repartoPastel, comparable } from '../engine.js?v=bb18823';
+import { chart, donut, legendHTML, pctTick, grid, avgDataset, endLabels } from '../charts.js?v=bb18823';
+import { phaseLineHTML } from '../clock.js?v=bb18823';
+import { recommendationsHTML } from '../recommend.js?v=bb18823';
+import { openOpForm, openDivForm, openHolding } from '../forms.js?v=bb18823';
 
 export function selDescription() {
   if (selIsAll()) return 'Toda la cartera de inversión';

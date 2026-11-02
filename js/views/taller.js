@@ -3,8 +3,8 @@
 // Apoyo a la decisión, no órdenes: los topes escritos de la política mandan. Kelly da el tamaño
 // óptimo cuando conoces la distribución de resultados; no la conoces, la estimas, y por eso aquí
 // la fracción por defecto es la mitad, Σ va encogida y la columna μ está para que la escribas tú.
-import { DB, cargarDiario, saveSettings, refreshSettings } from '../store.js?v=documentary-cash-20261014';
-import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtDate, cls, num, toast, C as COL, TYPES, HELP } from '../util.js?v=documentary-cash-20261014';
+import { DB, cargarDiario, saveSettings, refreshSettings } from '../store.js?v=bb18823';
+import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtDate, cls, num, toast, C as COL, TYPES, HELP } from '../util.js?v=bb18823';
 
 // Ayuda al pasar el cursor, con el mismo patrón que el resto de la app
 // Un elemento no puede llevar dos atributos class: el navegador se queda con el primero y el segundo
@@ -12,16 +12,16 @@ import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtDate, cls, num, toast, C as 
 // burbuja no se pinta (le pasaba a «Sin mercado», que llevaba class="muted").
 const ay = (k, extra = '') => ` class="tip${extra ? ' ' + extra : ''}" tabindex="0" data-tip="${esc(HELP[k] || '')}"`;
 const conQ = (t, k) => `<span${ay(k)}>${t} <span class="q">?</span></span>`;
-import { inSelPos, isInvest, defaultBucket, cerradasConMercado, simbolosEnCartera, fxAt } from '../engine.js?v=documentary-cash-20261014';
+import { inSelPos, isInvest, defaultBucket, cerradasConMercado, simbolosEnCartera, fxAt } from '../engine.js?v=bb18823';
 import { matriz, estadisticos, encoger, betaPareja, kellyIndividual, kellyMulti, aplicarPolitica,
          crecimiento, kellyBinario, kellyDiscreto, tesisAEscenarios, FRACCIONES, MIN_DIAS,
          tangencia, fronteraEficiente, implicitas, puntoRiesgoRetorno, maxSharpeLargo,
-         seleccionarAccionesKelly, contribucionRiesgo, porQueNoHayTangencia } from '../kelly.js?v=documentary-cash-20261014';
-import { targets, ORO_IDS, esEstable } from '../recommend.js?v=documentary-cash-20261014';
-import { openModal, closeModal } from '../forms.js?v=documentary-cash-20261014';
-import { donut, legendHTML, chart, pctTick, grid } from '../charts.js?v=documentary-cash-20261014';
-import { DRAWERS, PALETTE, ESTILOS, ESTILO_COLOR } from '../util.js?v=documentary-cash-20261014';
-import { hacerOrdenables } from '../sortable.js?v=documentary-cash-20261014';
+         seleccionarAccionesKelly, contribucionRiesgo, porQueNoHayTangencia } from '../kelly.js?v=bb18823';
+import { targets, ORO_IDS, esEstable } from '../recommend.js?v=bb18823';
+import { openModal, closeModal } from '../forms.js?v=bb18823';
+import { donut, legendHTML, chart, pctTick, grid } from '../charts.js?v=bb18823';
+import { DRAWERS, PALETTE, ESTILOS, ESTILO_COLOR } from '../util.js?v=bb18823';
+import { hacerOrdenables } from '../sortable.js?v=bb18823';
 
 const LS = 'sp-taller-v1';
 const hoyISO = () => new Date().toISOString().slice(0, 10);
@@ -677,6 +677,7 @@ export function renderTaller(v, C, { UI, render, go }) {
   const pIliq = K.total ? (K.sinMercado + K.vivienda) / K.total * 100 : 0;
 
   v.innerHTML = `<h2>Taller de dimensionamiento</h2>
+    <p><a class="btn" href="#/lws" id="tk-lws">Método LWS</a></p>
     <p class="muted" style="margin:.2rem 0 .9rem;font-size:.85rem;max-width:98ch">Kelly da la fracción del capital que maximiza el crecimiento <b>compuesto</b> cuando conoces la distribución de resultados. No la conoces: la estimas. Por eso la fracción por defecto es la mitad, la matriz va encogida y la columna μ está para que <b>escribas el retorno de tu tesis</b>, no para usar la media histórica. <b>Los topes escritos de tu política mandan y ninguna cifra de esta pantalla es una orden.</b></p>
 
     <div class="note warn" id="tk-ventana">Calculando la ventana común…</div>
@@ -835,6 +836,7 @@ export function renderTaller(v, C, { UI, render, go }) {
   numIn('tk-tope', 'tope', 1, 100); numIn('tk-suelo', 'suelo', 0, 50); numIn('tk-lam', 'lam', 0, 1); numIn('tk-anosmin', 'anosMin', 0, 25);
   const sm = $('#tk-suelomodo'); if (sm) sm.onchange = () => { P.sueloModo = sm.value; recal(); };
   // Parámetros de la cartera objetivo. Viven en `P.objetivo` y viajan a la base como el resto.
+  $('#tk-lws').onclick = e => { e.preventDefault(); go('lws'); };
   const objIn = (id, campo, min, max, vacio) => { const el = $('#' + id); if (!el) return;
     el.onchange = () => {
       if (vacio && el.value.trim() === '') { P.objetivo = { ...obj(), [campo]: null }; recal(); return; }
