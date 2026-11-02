@@ -1,9 +1,9 @@
-import { DB, saveSettings, localEditCount, clearLocalEdits, signOut, setPassword } from '../store.js?v=bb18823';
-import { $, $$, esc, fmtN, fmtDate, toast, sum, PHASES } from '../util.js?v=bb18823';
-import { fxAt, latestAtOrBefore } from '../engine.js?v=bb18823';
-import { targets, DEFAULT_TARGETS } from '../recommend.js?v=bb18823';
-import { exportAllXLSX, exportAllCSV, exportOpsCSV, exportDivsCSV, exportPositionsCSV, exportCatalogCSV, exportParaSkills } from '../export.js?v=bb18823';
-import { importFiliosCSV } from '../forms.js?v=bb18823';
+import { DB, saveSettings, localEditCount, clearLocalEdits, signOut, setPassword } from '../store.js?v=1f2ef2c';
+import { $, $$, esc, fmtN, fmtDate, toast, sum, PHASES } from '../util.js?v=1f2ef2c';
+import { fxAt, latestAtOrBefore } from '../engine.js?v=1f2ef2c';
+import { targets, DEFAULT_TARGETS } from '../recommend.js?v=1f2ef2c';
+import { exportAllXLSX, exportAllCSV, exportOpsCSV, exportDivsCSV, exportPositionsCSV, exportCatalogCSV, exportParaSkills } from '../export.js?v=1f2ef2c';
+import { importFiliosCSV } from '../forms.js?v=1f2ef2c';
 
 export function renderAjustes(v, C, { render, go }) {
   const T = targets(); const today = new Date().toISOString().slice(0, 10);

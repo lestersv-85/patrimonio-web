@@ -1,6 +1,6 @@
-import { DB, upsert } from '../store.js?v=bb18823';
-import { $, $$, esc, fmtEUR, fmtCcy, sum, uid, todayISO, num, toast } from '../util.js?v=bb18823';
-import { openAccForm } from '../forms.js?v=bb18823';
+import { DB, upsert } from '../store.js?v=1f2ef2c';
+import { $, $$, esc, fmtEUR, fmtCcy, sum, uid, todayISO, num, toast } from '../util.js?v=1f2ef2c';
+import { openAccForm } from '../forms.js?v=1f2ef2c';
 
 export function renderCuentas(v, C) {
   v.innerHTML = `

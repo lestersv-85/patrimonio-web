@@ -1,7 +1,7 @@
-import { DB } from '../store.js?v=bb18823';
-import { $, $$, esc, fmtCcy, fmtDate, TYPES, DRAWERS, ESTILOS} from '../util.js?v=bb18823';
-import { defaultBucket, priceAt } from '../engine.js?v=bb18823';
-import { openPosForm } from '../forms.js?v=bb18823';
+import { DB } from '../store.js?v=1f2ef2c';
+import { $, $$, esc, fmtCcy, fmtDate, TYPES, DRAWERS, ESTILOS} from '../util.js?v=1f2ef2c';
+import { defaultBucket, priceAt } from '../engine.js?v=1f2ef2c';
+import { openPosForm } from '../forms.js?v=1f2ef2c';
 
 export function renderPosiciones(v, C, { UI, render }) {
   const held = new Set(C.rows.map(r => r.positionId)); const f = UI.posFilter; const q = UI.search.toLowerCase();

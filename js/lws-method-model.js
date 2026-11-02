@@ -326,7 +326,7 @@ function historicalRisk(positions, history, warnings) {
     weightedPairCorrelation: coverage.complete && !unknownWeightedPair && pairWeight > 0 ? pairSum / pairWeight : null,
     pairs, positionRisk, count: n, n, coverage, observations: metaValid ? rows : null,
     periodsPerYear: metaValid ? history.periodsPerYear : null,
-    scope: 'fractional diagnostic exposures only; pending weights unknown; cash deterministic; historical means only center covariance' };
+    scope: 'category-normalized plan exposures only; pending weights unknown; cash deterministic; historical means only center covariance' };
 }
 
 export async function calculateLWS(config, bundle, options = {}) {
@@ -354,19 +354,59 @@ export async function calculateLWS(config, bundle, options = {}) {
     try {
       const law = buildLaw(active, bundle, options);
       result.solver.ipf = law.ipf;
-      if (!law.ipf.converged) { result.status = 'pending'; warnings.push('IPF did not converge; joint allocation unavailable'); return result; }
+      if (!law.ipf.converged) throw Error('Global IPF did not converge; category calculations remain independent');
       solution = optimize(law, active, config.categories, parameters, options);
       result.solver = { ...solution.solver, ipf: law.ipf };
-    } catch (error) { result.status = 'pending'; warnings.push(error.message); return result; }
+    } catch (error) { warnings.push(error.message); solution = {weights: active.map(()=>null), solver:{gap:null,converged:false,reason:'global-diagnostic-unavailable'}};result.solver={...result.solver,...solution.solver}; }
   } else solution = { weights: [], solver: { gap: 0, converged: true, iterations: 0, reason: 'no-eligible-positions' } };
   if (!active.length) result.solver = solution.solver;
-  if (!result.solver.converged) {
-    result.status = 'not-converged';
-    result.solver.iterateWeights = Object.fromEntries(active.map((p,j)=>[idOf(p),solution.weights[j]]));
-    warnings.push('Solver convergence not established; canonical weights and cash remain pending. Feasible iterates are technical diagnostics only.');
+  const globalConverged = result.solver.converged;
+  result.solver.global = {...result.solver};
+  if (!globalConverged) result.solver.iterateWeights = Object.fromEntries(active.map((p,j)=>[idOf(p),solution.weights[j]]));
+  if (!globalConverged) warnings.push('Global diagnostic unavailable or not converged; category allocations are calculated independently.');
+  active.forEach((p, j) => { p.fullWeight = globalConverged ? solution.weights[j] : null; p.weight = 0; });
+  result.solver.converged = true;
+  // The fraction scales internal scores; normalization preserves each strategic budget.
+  // Final weights are a category policy allocation, not the unconstrained log optimum.
+  result.solver.categories = {};
+  for (const c of config.categories.filter(c => c.id !== 'cash')) {
+    const group = active.filter(p => p.categoryId === c.id);
+    if (group.length && c.budget > 0) {
+      try {
+        const law = buildLaw(group, bundle, options);
+        if (!law.ipf.converged) throw Error(`Category ${c.id}: IPF did not converge`);
+        const internal = group.map(p => ({...p, cap: Math.min(1, p.cap / c.budget)}));
+        const solved = optimize(law, internal, [{...c, budget: 1}], {...parameters, minimumCash: 0}, options);
+        result.solver.categories[c.id] = {...solved.solver, ipf: law.ipf};
+        if (!law.ipf.converged || !solved.solver.converged) throw Error(`Category ${c.id}: solver convergence not established`);
+        group.forEach((p,j) => {p.categoryKellyWeight = solved.weights[j];});
+      } catch(error) {
+        result.status = error.message.includes('solver convergence') ? 'not-converged' : 'pending'; result.solver.converged = false; warnings.push(error.message);
+        for (const p of active) {p.weight = null; p.amountEUR = null;}
+        return result;
+      }
+    }
+    let remaining = c.budget;
+    let members = active.filter(p => p.categoryId === c.id && parameters.kellyFraction > 0 && p.categoryKellyWeight > 1e-10);
+    while (members.length && remaining > EPS) {
+      const denominator = sum(members.map(p => p.categoryKellyWeight));
+      const capped = members.filter(p => remaining * p.categoryKellyWeight / denominator >= p.cap);
+      if (!capped.length) { for (const p of members) p.weight = remaining * p.categoryKellyWeight / denominator; remaining = 0; break; }
+      for (const p of capped) { p.weight = p.cap; remaining -= p.cap; }
+      members = members.filter(p => !capped.includes(p));
+    }
+    if (remaining > EPS && c.budget > 0) warnings.push(`Category ${c.id}: unallocated budget retained in cash (pending inputs, no positive joint support, zero fraction or position caps)`);
+  }
+  const assigned = sum(active.map(p => p.weight));
+  if (assigned > 1 - parameters.minimumCash + EPS) {
+    result.status = 'invalid'; result.errors.push('Category allocation conflicts with minimumCash; adjust category budgets or reserve, without silently scaling final weights');
+    for (const p of active) { p.weight = null; p.amountEUR = null; }
     return result;
   }
-  active.forEach((p, j) => { p.fullWeight = solution.weights[j]; p.weight = p.fullWeight * parameters.kellyFraction; });
+  result.solver.gap = Math.max(0,...Object.values(result.solver.categories).map(s=>s.gap));
+  result.solver.tolerance = options.tolerance ?? 1e-8;
+  result.allocationPolicy = 'fraction-within-category-normalized';
+  warnings.push('Final category-normalized weights preserve strategic budgets where eligible capacity permits; they are not the global joint log-optimal vector. A common positive Kelly fraction cancels in normalization.');
   for (const c of config.categories.filter(c => c.id !== 'cash')) {
     const members = active.filter(p => p.categoryId === c.id);
     const deterministic = members.filter(p => p.diagnostic.deterministicPositiveExcess);
@@ -380,10 +420,10 @@ export async function calculateLWS(config, bundle, options = {}) {
   const lwsSum = sum(active.map(p => p.lwsWeight));
   if (lwsSum > 1 - parameters.minimumCash + EPS) warnings.push('Category-normalized LWS comparison exceeds joint investable budget; not an executable allocation');
   for (const p of result.positions) if (p.weight !== null && finite(capital)) p.amountEUR = p.weight * capital;
-  result.cashFull = 1 - sum(active.map(p => p.fullWeight));
+  result.cashFull = globalConverged ? 1 - sum(active.map(p => p.fullWeight)) : null;
   result.cashFractional = 1 - sum(active.map(p => p.weight));
   result.categoryDetails = config.categories.map(c => ({ id: c.id, budget: c.budget,
-    fullWeight: c.id === 'cash' ? result.cashFull : sum(active.filter(p => p.categoryId === c.id).map(p => p.fullWeight)),
+    fullWeight: !globalConverged ? null : c.id === 'cash' ? result.cashFull : sum(active.filter(p => p.categoryId === c.id).map(p => p.fullWeight)),
     weight: c.id === 'cash' ? result.cashFractional : sum(active.filter(p => p.categoryId === c.id).map(p => p.weight)),
     pending: result.positions.filter(p => p.categoryId === c.id && p.diagnostic.status === 'pending').map(idOf) }));
   result.categoryWeights = Object.fromEntries(result.categoryDetails.map(c => [c.id, c.weight]));

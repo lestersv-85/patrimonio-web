@@ -1,4 +1,4 @@
-import {calculateLWS,validateConfig} from './lws-method-model.js?v=bb18823';
+import {calculateLWS,validateConfig} from './lws-method-model.js?v=1f2ef2c';
 
 const euro=v=>Number.isFinite(v)?new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v):'Pendiente';
 const pct=v=>Number.isFinite(v)?new Intl.NumberFormat('es-ES',{style:'percent',maximumFractionDigits:2}).format(v):'Pendiente';
@@ -10,6 +10,9 @@ function friendly(text){const s=String(text);const translations=[
  ['Historical window shorter','La historia disponible tiene menos de cinco años; la dependencia futura no está validada.'],
  ['History missing for positive','Faltan series de posiciones con peso: el riesgo agregado permanece pendiente.'],
  ['Solver convergence not established','No se ha certificado la convergencia del cálculo; la distribución permanece pendiente.'],
+ ['Final category-normalized weights','El presupuesto se reparte por categoría con topes. La fracción Kelly común se cancela al normalizar; los pesos finales no son el óptimo global sin normalizar.'],
+ ['Category allocation conflicts','Los presupuestos por categoría entran en conflicto con la reserva mínima. Ajusta los presupuestos o la reserva.'],
+ ['Category ', 'Hay un cupo de categoría sin asignar por falta de datos, soporte positivo o capacidad bajo los topes; permanece en efectivo.'],
  ['IPF did not converge','No se pudo ajustar la distribución a las probabilidades indicadas; revisa sus entradas.']];
  for(const [prefix,label]of translations)if(s.startsWith(prefix))return label;
  return s.replace('Mixed horizons require explicit postExitPolicy cash and shorter source horizon','Para combinar horizontes, define qué ocurre después de la salida temporal. No se convierte automáticamente una tesis de tres años en cinco.').replace('Category budgets must sum to one','Los presupuestos de categorías deben sumar100%.');}
@@ -33,7 +36,7 @@ function donut(parent,categories,weights,title){
  const total=categories.reduce((sum,c)=>sum+(Number.isFinite(weights[c.id])?weights[c.id]:0),0);
  categories.forEach((c,i)=>{const w=weights[c.id];if(!Number.isFinite(w)||w<=1e-10)return;
   const circle=document.createElementNS(ns,'circle');circle.setAttribute('cx','110');circle.setAttribute('cy','110');circle.setAttribute('r','78');circle.setAttribute('fill','none');circle.setAttribute('stroke',COLORS[i%COLORS.length]);circle.setAttribute('stroke-width','39');circle.setAttribute('pathLength','100');circle.setAttribute('stroke-dasharray',`${w/total*100} ${100-w/total*100}`);circle.setAttribute('stroke-dashoffset',String(-offset));circle.setAttribute('transform','rotate(-90 110 110)');offset+=w/total*100;svg.append(circle);
-  const row=el('div',undefined,list);const dot=el('span','●',row);dot.style.color=COLORS[i%COLORS.length];el('span',c.label,row);el('strong',pct(w),row);
+  const row=el('div',undefined,list);const dot=el('span','●',row);dot.style.color=COLORS[i%COLORS.length];el('span',c.label,row);el('strong',pct(w),row);const tip=document.createElementNS(ns,'title');tip.textContent=c.label+': '+pct(w);circle.append(tip);
  });
  const text=document.createElementNS(ns,'text');text.setAttribute('x','110');text.setAttribute('y','117');text.setAttribute('text-anchor','middle');text.textContent=pct(total);svg.append(text);
 }
@@ -85,7 +88,7 @@ export async function mountLWSMethod(host,{loadData,loadSaved,saveSaved,loadHist
   function card(label,value,description){const c=el('article',undefined,cards,'lws-panel');const h=el('p',label,c,'lws-kpi-label');help(h,description);el('strong',value,c,'lws-kpi-value');}
   const risks=result?.historyRisk;
   card('Base parcial del ejercicio',euro(config.baseValueEUR),config.baseScope||'Base editable del ejercicio, distinta del patrimonio total y del saldo real.');
-  card('Capital asignado',Number.isFinite(result?.cashFractional)?pct(1-result.cashFractional):'Pendiente','Suma de pesos fraccionados de instrumentos. Cupos sin ventaja o sin datos pueden permanecer en efectivo.');
+  card('Capital asignado',Number.isFinite(result?.cashFractional)?pct(1-result.cashFractional):'Pendiente','Suma de pesos finales normalizados dentro de cada categoría. El 50% Kelly no divide el presupuesto de la categoría. Los topes y datos pendientes pueden dejar cupo sin asignar.');
   card('Efectivo del plan',result?pct(result.cashFractional):'Pendiente','Reserva resultante del cálculo, no saldo bancario. No confundir con el presupuesto estratégico de liquidez.');
   card('Acciones con peso',result?.solver?.converged&&Number.isFinite(result?.cashFractional)?String((result.positions||[]).filter(p=>p.type==='stock'&&p.weight>1e-8).length):'Pendiente','Se cuentan emisores únicos; fondos, oro y bloques cripto se presentan aparte. Máximo operativo de20 acciones.');
   card('Volatilidad histórica',pct(risks?.volatility),'Calculada con los pesos nuevos y retornos simultáneos EUR. Algunas series son representativas; cash se modela determinista. No es riesgo de todo el patrimonio ni previsión.');
@@ -93,20 +96,24 @@ export async function mountLWSMethod(host,{loadData,loadSaved,saveSaved,loadHist
   card('Correlación de pares',number(risks?.weightedPairCorrelation),'Media ponderada entre pares distintos, excluyendo efectivo. >0,60 alerta de riesgo compartido; <0,30 favorable para diversificar, nunca señal de compra.');
   card('Entradas pendientes',Array.isArray(result?.pending)?String(result.pending.length):'Pendiente','Una entrada desconocida se muestra pendiente y no como rechazo económico con peso0. El cálculo parcial conserva el cupo sin invertir.');
   const diagrams=el('div',undefined,host,'lws-charts');donut(diagrams,categories,Object.fromEntries(categories.map(c=>[c.id,c.budget])),'Presupuesto estratégico');
-  if(Number.isFinite(result?.cashFractional))donut(diagrams,categories,result.categoryWeights||Object.fromEntries(categories.map(c=>[c.id,c.id==='cash'?result.cashFractional:(result.positions||[]).filter(p=>p.categoryId===c.id).reduce((a,p)=>a+(p.weight||0),0)])),'Distribución calculada · fraccionada');
+  if(Number.isFinite(result?.cashFractional)){
+   const slices=(result.positions||[]).filter(p=>Number.isFinite(p.weight)&&p.weight>1e-10).map(p=>({id:p.id,label:(p.ticker||p.id)+' · '+p.name,weight:p.weight}));
+   slices.push({id:'__plan_cash__',label:'Efectivo del plan / cupos sin asignar',weight:result.cashFractional});
+   donut(diagrams,slices,Object.fromEntries(slices.map(p=>[p.id,p.weight])),'Distribución calculada · posiciones');
+  }
   const settings=el('section',undefined,host,'lws-panel');el('h3','Configuración del método',settings);const grid=el('div',undefined,settings,'lws-inputs');
   input(grid,'Base del ejercicio · EUR',config.baseValueEUR,v=>{config.baseValueEUR=v;changed();},{min:0});
   input(grid,'Liquidez anual · hipótesis %',params.cashAnnual,v=>{params.cashAnnual=v;changed();},{percent:true,min:-99.99});
-  input(grid,'Fracción Kelly %',params.kellyFraction,v=>{params.kellyFraction=v;changed();},{percent:true,min:0,max:100});
+  input(grid,'Fracción Kelly interna %',params.kellyFraction,v=>{params.kellyFraction=v;changed();},{percent:true,min:0,max:100});
   input(grid,'Reserva mínima %',params.minimumCash,v=>{params.minimumCash=v;changed();},{percent:true,min:0,max:100});
   input(grid,'Horizonte común · años',params.horizonYears,v=>{params.horizonYears=v;changed();},{min:1,max:30});
   const pl=el('label','Después de una salida temporal',grid),policy=el('select',undefined,pl);
   for(const [v,t]of [['pending','Pendiente: no combinar horizontes'],['cash','Reinvertir en efectivo al tipo configurado']]){const o=el('option',t,policy);o.value=v;}policy.value=params.postExitPolicy;policy.onchange=()=>{params.postExitPolicy=policy.value;changed();};
   const ml=el('label','Probabilidades utilizadas',grid),mode=el('select',undefined,ml);
   for(const [v,t]of [['inherited-diagnostic','Hipótesis heredadas · diagnóstico'],['documented','Documentadas por empresa']]){const o=el('option',t,mode);o.value=v;}mode.value=params.probabilityMode;mode.onchange=()=>{params.probabilityMode=mode.value;changed();};
-  const categoryBody=table(settings,['Categoría','Bloque','Máximo de capital %']);
+  const categoryBody=table(settings,['Categoría','Bloque','Presupuesto de categoría %']);
   for(const c of categories){const tr=el('tr',undefined,categoryBody);el('td',c.label,tr);el('td',c.block==='stable'?'Estable':'Convexo',tr);input(el('td',undefined,tr),'',c.budget,v=>{c.budget=v;changed();},{percent:true,min:0,max:100});}
-  el('p','La liquidez pertenece al estable y se muestra por separado. Los máximos no obligan a invertir. Medio Kelly escala todo el vector y deja el remanente en efectivo.',settings,'lws-muted');
+  el('p','La liquidez pertenece al estable y se muestra por separado. El Kelly se utiliza para el reparto interno. Una fracción común positiva (50%, 100%, etc.) se cancela al normalizar: no reduce el presupuesto de categoría. Los topes o la falta de datos/soporte positivo pueden dejar cupo sin asignar. El reparto final por categorías no es el óptimo logarítmico global sin normalizar.',settings,'lws-muted');
   const galaxy=el('details',undefined,host,'lws-panel');el('summary','Galaxy · catalizador BTC a tres años',galaxy);
   const thesis=config.galaxyThesis||{};el('p',thesis.catalyst||'Hipótesis pendiente',galaxy);const gg=el('div',undefined,galaxy,'lws-inputs');
   if(thesis.btcThreeYearRange)el('p',`Rango indicado por el usuario: ${number(thesis.btcThreeYearRange.low)}–${number(thesis.btcThreeYearRange.high)} ${thesis.btcThreeYearRange.currency||'moneda pendiente'}. No define por sí solo tres escenarios ni sus probabilidades.`,galaxy,'lws-notice');
@@ -120,7 +127,7 @@ export async function mountLWSMethod(host,{loadData,loadSaved,saveSaved,loadHist
   const results=new Map((result?.positions||[]).map(p=>[p.id,p]));
   function list(origin,title){
    const section=el('section',undefined,host,'lws-panel');el('h3',title,section);
-   const body=table(section,['Incluir','Posición / categoría','Estado / horizonte','LWS exceso','Individual exacto','Conjunto pleno','Fraccionado','Importe EUR']);
+   const body=table(section,['Incluir','Posición / categoría','Estado / horizonte','LWS exceso','Individual exacto','Conjunto global · diagnóstico','Peso final · categoría','Importe EUR']);
    for(const p of positions.filter(p=>(p.origin||'holding')===origin)){
     const row=el('tr',undefined,body),check=el('input',undefined,el('td',undefined,row));check.type='checkbox';check.checked=p.enabled;check.onchange=()=>{p.enabled=check.checked;changed();};
     const name=el('td',undefined,row);el('strong',p.name,name);const select=el('select',undefined,name);
