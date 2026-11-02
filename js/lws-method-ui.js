@@ -1,4 +1,4 @@
-import {calculateLWS,validateConfig,applyCoreOperability} from './lws-method-model.js?v=22c8819';
+import {calculateLWS,validateConfig,applyCoreOperability} from './lws-method-model.js?v=965a62c';
 
 const euro=v=>Number.isFinite(v)?new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v):'Pendiente';
 const pct=v=>Number.isFinite(v)?new Intl.NumberFormat('es-ES',{style:'percent',maximumFractionDigits:2}).format(v):'Pendiente';

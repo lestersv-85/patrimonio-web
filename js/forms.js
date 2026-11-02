@@ -1,7 +1,7 @@
 // Formularios: operación, dividendo, posición, cuenta, ficha de posición, importación manual de CSV de Filios
-import { DB, upsert, remove, savePrice } from './store.js?v=22c8819';
-import { $, $$, esc, uid, todayISO, nowHM, fmtEUR, fmtN, fmtPct, fmtCcy, fmtDate, cls, num, toast, TYPES, BUCKETS, DRAWERS, OP_LABEL, sum, ESTILOS} from './util.js?v=22c8819';
-import { posOf, acctOf, acctName, fxAt, priceAt, opAmounts, divAmounts, defaultBucket, sortOps, compute, invalidate, replay } from './engine.js?v=22c8819';
+import { DB, upsert, remove, savePrice } from './store.js?v=965a62c';
+import { $, $$, esc, uid, todayISO, nowHM, fmtEUR, fmtN, fmtPct, fmtCcy, fmtDate, cls, num, toast, TYPES, BUCKETS, DRAWERS, OP_LABEL, sum, ESTILOS} from './util.js?v=965a62c';
+import { posOf, acctOf, acctName, fxAt, priceAt, opAmounts, divAmounts, defaultBucket, sortOps, compute, invalidate, replay } from './engine.js?v=965a62c';
 
 let rerender = () => {};
 export function setRerender(fn) { rerender = fn; }

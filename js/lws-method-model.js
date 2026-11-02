@@ -376,6 +376,12 @@ export function applyCoreOperability(config,bundle,capitalOverride){
   if(pe)pe.budget=next.positions.filter(p=>p.enabled&&p.categoryId==='private-equity').reduce((s,p)=>s+(p.fixedWeight??0),0);
   if(pool)pool.budget=next.operabilityFundingPool-(rf?.budget??0)-(pe?.budget??0);
  }
+ for(const rule of bundle?.temporaryThesisPolicies??[]){
+  if(next.appliedThesisRevisions?.[rule.id]===rule.revision)continue;
+  const position=next.positions.find(p=>p.id===rule.id);if(!position)continue;
+  position.legacy5y??={returns:position.returns,probabilities:position.probabilities,horizonYears:position.horizonYears,status:'archived_not_used_for_temporary_thesis'};
+  Object.assign(position,structuredClone(rule.fields));next.appliedThesisRevisions??={};next.appliedThesisRevisions[rule.id]=rule.revision;
+ }
  return next;
 }
 

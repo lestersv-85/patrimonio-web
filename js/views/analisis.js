@@ -1,10 +1,10 @@
 // Análisis: atribución por posición, concentración, divisa, caída máxima, volatilidad, costes, rotación, escenarios y calidad de datos.
 // Cada bloque declara método y cobertura. Nada aquí es una predicción.
-import { DB, saveSettings } from '../store.js?v=22c8819';
-import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtDate, fmtYM, cls, sum, todayISO, daysBetween, monthKey, addMonths, parseISO, isoDate, monthEnd, help, toast, num, BUCKETS, TYPES } from '../util.js?v=22c8819';
-import { compute, inSelPos, inSelCash, selIsAll, monthlySeries, firstOpDate, perf, acctName, acctOf, opAmounts, divAmounts, posOf, replay } from '../engine.js?v=22c8819';
-import { chart, bars, grid, endLabels } from '../charts.js?v=22c8819';
-import { selDescription } from './inicio.js?v=22c8819';
+import { DB, saveSettings } from '../store.js?v=965a62c';
+import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtDate, fmtYM, cls, sum, todayISO, daysBetween, monthKey, addMonths, parseISO, isoDate, monthEnd, help, toast, num, BUCKETS, TYPES } from '../util.js?v=965a62c';
+import { compute, inSelPos, inSelCash, selIsAll, monthlySeries, firstOpDate, perf, acctName, acctOf, opAmounts, divAmounts, posOf, replay } from '../engine.js?v=965a62c';
+import { chart, bars, grid, endLabels } from '../charts.js?v=965a62c';
+import { selDescription } from './inicio.js?v=965a62c';
 
 export function renderAnalisis(v, C, { UI, render, filterBarHTML, bindFilterBar }) {
   const today = todayISO(); const y = today.slice(0, 4); const first = firstOpDate();

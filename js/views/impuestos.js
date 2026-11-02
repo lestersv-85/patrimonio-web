@@ -1,8 +1,8 @@
 // Impuestos: resumen fiscal por ejercicio (IRPF), ganancias FIFO por activo, dividendos con retenciones,
 // intereses y recompensas, comisiones, avisos (regla de los dos meses, modelo 720/721) y pérdidas aprovechables.
-import { DB, saveSettings } from '../store.js?v=22c8819';
-import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtDate, cls, sum, todayISO, addDays, TYPES, help, toast } from '../util.js?v=22c8819';
-import { replay, compute, opAmounts, divAmounts, posOf, acctOf, acctName, isInvest } from '../engine.js?v=22c8819';
+import { DB, saveSettings } from '../store.js?v=965a62c';
+import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtDate, cls, sum, todayISO, addDays, TYPES, help, toast } from '../util.js?v=965a62c';
+import { replay, compute, opAmounts, divAmounts, posOf, acctOf, acctName, isInvest } from '../engine.js?v=965a62c';
 
 const TAX_TYPE = { stock: 'Valores', etf: 'ETF', fund: 'Fondos', plan: 'Plan de pensiones', crypto: 'Cripto', option: 'Opciones', custom: 'Otros', cash: 'Efectivo' };
 const CASILLAS = [
