@@ -1,8 +1,8 @@
-import { DB } from '../store.js?v=1f2ef2c';
-import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtCcy, fmtDate, cls, sum, TYPE_SHORT } from '../util.js?v=1f2ef2c';
-import { acctName, viviendaValue } from '../engine.js?v=1f2ef2c';
-import { openOpForm, openHolding } from '../forms.js?v=1f2ef2c';
-import { exportPositionsCSV } from '../export.js?v=1f2ef2c';
+import { DB } from '../store.js?v=22c8819';
+import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtCcy, fmtDate, cls, sum, TYPE_SHORT } from '../util.js?v=22c8819';
+import { acctName, viviendaValue } from '../engine.js?v=22c8819';
+import { openOpForm, openHolding } from '../forms.js?v=22c8819';
+import { exportPositionsCSV } from '../export.js?v=22c8819';
 
 export function renderCartera(v, C, { UI, render }) {
   const acc = UI.account;

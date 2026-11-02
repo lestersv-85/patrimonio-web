@@ -1,4 +1,4 @@
-import {calculateLWS,validateConfig} from './lws-method-model.js?v=1f2ef2c';
+import {calculateLWS,validateConfig,applyCoreOperability} from './lws-method-model.js?v=22c8819';
 
 const euro=v=>Number.isFinite(v)?new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v):'Pendiente';
 const pct=v=>Number.isFinite(v)?new Intl.NumberFormat('es-ES',{style:'percent',maximumFractionDigits:2}).format(v):'Pendiente';
@@ -46,14 +46,14 @@ export async function mountLWSMethod(host,{loadData,loadSaved,saveSaved,loadHist
  const generation=Symbol('lws-mount');host.lwsGeneration=generation;
  host.classList.add('lws-plan');host.replaceChildren();el('p','Cargando método y configuración privada…',host);
  let bundle,config,revision=0,result=null,busy=false,dirty=false,error='',savedAt='';
- try{bundle=await loadData();if(!bundle?.config||!bundle.history||!bundle.uniforms)throw Error('Paquete de método incompleto.');const saved=loadSaved?await loadSaved():null;config=structuredClone(saved?.config||bundle.config);revision=saved?.revision||0;}
+ try{bundle=await loadData();if(!bundle?.config||!bundle.history||!bundle.uniforms)throw Error('Paquete de método incompleto.');const saved=loadSaved?await loadSaved():null;config=applyCoreOperability(structuredClone(saved?.config||bundle.config),bundle);revision=saved?.revision||0;}
  catch(e){host.replaceChildren();el('h2','Método LWS',host);el('p',e.message,host,'lws-notice');
   const label=el('label','Abrir un paquete privado exportado desde este método',host),file=el('input',undefined,label);file.type='file';file.accept='.json,application/json';
   file.onchange=async()=>{try{const f=file.files?.[0];if(!f)return;if(f.size>12_000_000)throw Error('Paquete demasiado grande.');const data=JSON.parse(await f.text());if(!data.config||!data.history||!data.uniforms)throw Error('Se requiere un paquete completo, no solo los parámetros.');await mountLWSMethod(host,{loadData:async()=>data,loadSaved:async()=>null});}catch(err){el('p',err.message,host,'lws-error');}};
   return;}
  function changed(){result=null;dirty=true;error='';render();}
  async function calculate(){
-  if(busy)return;busy=true;error='';render();
+  if(busy)return;config=applyCoreOperability(config,bundle);busy=true;error='';render();
   try{const snapshot=structuredClone(config),key=JSON.stringify(snapshot);await new Promise(r=>setTimeout(r,20));const computed=await calculateLWS(snapshot,bundle,{onProgress:message=>{const n=host.querySelector('[data-progress]');if(n)n.textContent=String(message);}});if(key===JSON.stringify(config)){result=computed;dirty=false;}else{result=null;dirty=true;}}
   catch(e){result=null;error=e.message;}
   finally{busy=false;render();}
@@ -66,7 +66,7 @@ export async function mountLWSMethod(host,{loadData,loadSaved,saveSaved,loadHist
   button(toolbar,busy?'Calculando…':'Calcular distribución',calculate).disabled=busy;
   const save=button(toolbar,storageScope==='local'?'Guardar en este navegador':'Guardar en ambas webs',async()=>{
    if(!saveSaved){error='Guardado en la nube no disponible.';render();return;}
-   const check=validateConfig(config);if(check.errors?.length){error=check.errors.join(' · ');render();return;}
+   config=applyCoreOperability(config,bundle);const check=validateConfig(config);if(check.errors?.length){error=check.errors.join(' · ');render();return;}
    try{save.disabled=true;const response=await saveSaved(structuredClone(config),revision);revision=typeof response==='number'?response:response.revision;savedAt=new Date().toLocaleString('es-ES');error='';render();}
    catch(e){error=e.message;render();}
   });save.disabled=busy||!saveSaved;
@@ -77,6 +77,7 @@ export async function mountLWSMethod(host,{loadData,loadSaved,saveSaved,loadHist
   const importLabel=el('label','Importar configuración',toolbar,'lws-button');const upload=el('input',undefined,importLabel);upload.type='file';upload.accept='.json,application/json';upload.className='lws-file';
   upload.onchange=async()=>{try{const file=upload.files?.[0];if(!file)return;if(file.size>1_000_000)throw Error('Importa solo la configuración, sin el paquete de series.');const parsed=JSON.parse(await file.text()),next=parsed.config||parsed;const check=validateConfig(next);if(check.errors?.length)throw Error(check.errors.join(' · '));config=next;changed();}catch(e){error=e.message;render();}};
   el('p','DIAGNÓSTICO CONDICIONADO · los escenarios heredados y la dependencia simulada no son probabilidades futuras comprobadas.',host,'lws-notice');
+  if(config.appliedCoreOperability)el('p','PP mantenido por su valor registrado y la aportación configurada. Núcleo restante repartido entre los fondos operables según la regla configurada. Agregados desglosados una sola vez; RF fuera del NúcleoRV. Valoraciones del archivo, no saldos actuales.',host,'lws-notice');
   if(dirty)el('p','Entradas modificadas: resultados anteriores ocultos hasta volver a calcular.',host,'lws-notice');
   if(error)el('p',error,host,'lws-error');
   for(const message of result?.errors||[])el('p',friendly(message),host,'lws-error');
@@ -94,7 +95,7 @@ export async function mountLWSMethod(host,{loadData,loadSaved,saveSaved,loadHist
   card('Volatilidad histórica',pct(risks?.volatility),'Calculada con los pesos nuevos y retornos simultáneos EUR. Algunas series son representativas; cash se modela determinista. No es riesgo de todo el patrimonio ni previsión.');
   card('Diversificación',risks?.diversificationRatio==null?'Pendiente':number(risks.diversificationRatio)+'×','Volatilidad individual ponderada dividida por volatilidad de cartera. Más alto indica reducción histórica por dependencia imperfecta; no calidad empresarial.');
   card('Correlación de pares',number(risks?.weightedPairCorrelation),'Media ponderada entre pares distintos, excluyendo efectivo. >0,60 alerta de riesgo compartido; <0,30 favorable para diversificar, nunca señal de compra.');
-  card('Entradas pendientes',Array.isArray(result?.pending)?String(result.pending.length):'Pendiente','Una entrada desconocida se muestra pendiente y no como rechazo económico con peso0. El cálculo parcial conserva el cupo sin invertir.');
+  card('Entradas pendientes',Array.isArray(result?.pending)?String(result.pending.length):'Pendiente','Los retornos desconocidos siguen pendientes. Una tenencia mantenida o un peso manual puede tener asignación conocida sin disponer de previsión; el cupo libre sin datos no se fuerza.');
   const diagrams=el('div',undefined,host,'lws-charts');donut(diagrams,categories,Object.fromEntries(categories.map(c=>[c.id,c.budget])),'Presupuesto estratégico');
   if(Number.isFinite(result?.cashFractional)){
    const slices=(result.positions||[]).filter(p=>Number.isFinite(p.weight)&&p.weight>1e-10).map(p=>({id:p.id,label:(p.ticker||p.id)+' · '+p.name,weight:p.weight}));
@@ -102,7 +103,8 @@ export async function mountLWSMethod(host,{loadData,loadSaved,saveSaved,loadHist
    donut(diagrams,slices,Object.fromEntries(slices.map(p=>[p.id,p.weight])),'Distribución calculada · posiciones');
   }
   const settings=el('section',undefined,host,'lws-panel');el('h3','Configuración del método',settings);const grid=el('div',undefined,settings,'lws-inputs');
-  input(grid,'Base del ejercicio · EUR',config.baseValueEUR,v=>{config.baseValueEUR=v;changed();},{min:0});
+  input(grid,'Base del ejercicio · EUR',config.baseValueEUR,v=>{config.baseValueEUR=v;changed();},{min:0.01});
+  if(config.appliedCoreOperability)input(grid,'Cupo conjunto Oportunidades / EQT / RF %',config.operabilityFundingPool,v=>{config.operabilityFundingPool=v;changed();},{percent:true,min:0,max:100});
   input(grid,'Liquidez anual · hipótesis %',params.cashAnnual,v=>{params.cashAnnual=v;changed();},{percent:true,min:-99.99});
   input(grid,'Fracción Kelly interna %',params.kellyFraction,v=>{params.kellyFraction=v;changed();},{percent:true,min:0,max:100});
   input(grid,'Reserva mínima %',params.minimumCash,v=>{params.minimumCash=v;changed();},{percent:true,min:0,max:100});
@@ -112,7 +114,7 @@ export async function mountLWSMethod(host,{loadData,loadSaved,saveSaved,loadHist
   const ml=el('label','Probabilidades utilizadas',grid),mode=el('select',undefined,ml);
   for(const [v,t]of [['inherited-diagnostic','Hipótesis heredadas · diagnóstico'],['documented','Documentadas por empresa']]){const o=el('option',t,mode);o.value=v;}mode.value=params.probabilityMode;mode.onchange=()=>{params.probabilityMode=mode.value;changed();};
   const categoryBody=table(settings,['Categoría','Bloque','Presupuesto de categoría %']);
-  for(const c of categories){const tr=el('tr',undefined,categoryBody);el('td',c.label,tr);el('td',c.block==='stable'?'Estable':'Convexo',tr);input(el('td',undefined,tr),'',c.budget,v=>{c.budget=v;changed();},{percent:true,min:0,max:100});}
+  for(const c of categories){const tr=el('tr',undefined,categoryBody);el('td',c.label,tr);el('td',c.block==='stable'?'Estable':'Convexo',tr);const field=input(el('td',undefined,tr),'',c.budget,v=>{c.budget=v;changed();},{percent:true,min:0,max:100});if(config.appliedCoreOperability&&['bonds','private-equity','opportunities'].includes(c.id)){field.disabled=true;field.title='Calculado desde valores mantenidos, pesoEQT y cupo conjunto; editar esos parámetros.';}}
   el('p','La liquidez pertenece al estable y se muestra por separado. El Kelly se utiliza para el reparto interno. Una fracción común positiva (50%, 100%, etc.) se cancela al normalizar: no reduce el presupuesto de categoría. Los topes o la falta de datos/soporte positivo pueden dejar cupo sin asignar. El reparto final por categorías no es el óptimo logarítmico global sin normalizar.',settings,'lws-muted');
   const galaxy=el('details',undefined,host,'lws-panel');el('summary','Galaxy · catalizador BTC a tres años',galaxy);
   const thesis=config.galaxyThesis||{};el('p',thesis.catalyst||'Hipótesis pendiente',galaxy);const gg=el('div',undefined,galaxy,'lws-inputs');
@@ -132,10 +134,14 @@ export async function mountLWSMethod(host,{loadData,loadSaved,saveSaved,loadHist
     const row=el('tr',undefined,body),check=el('input',undefined,el('td',undefined,row));check.type='checkbox';check.checked=p.enabled;check.onchange=()=>{p.enabled=check.checked;changed();};
     const name=el('td',undefined,row);el('strong',p.name,name);const select=el('select',undefined,name);
     for(const c of categories.filter(c=>c.id!=='cash')){const o=el('option',c.label,select);o.value=c.id;}select.value=p.categoryId;select.onchange=()=>{p.categoryId=select.value;p.temporary=select.value==='opportunities';changed();};
-    const r=results.get(p.id);el('td',(p.enabled?(r?.weight===null?'Pendiente':r?'Condicional':'Sin calcular'):'Excluida')+' · '+(p.horizonYears==null?'plazo pendiente':p.horizonYears+'a'),row);
-    el('td',number(r?.diagnostic?.score),row);el('td',pct(r?.diagnostic?.exact),row);el('td',pct(r?.fullWeight),row);el('td',pct(r?.weight),row);el('td',euro(r?.amountEUR),row);
+    const r=results.get(p.id);el('td',(p.enabled?(r?.weight===null?'Pendiente':r?(p.fixedWeight!=null?'Regla operativa':'Condicional'):'Sin calcular'):'Excluida')+' · '+(p.horizonYears==null?'plazo pendiente':p.horizonYears+'a'),row);
+    el('td',number(r?.diagnostic?.score),row);el('td',pct(r?.diagnostic?.exact),row);el('td',pct(result?.solver?.global?.converged===false?null:r?.fullWeight),row);el('td',pct(r?.weight),row);el('td',euro(r?.amountEUR),row);
     const detailRow=el('tr',undefined,body),cell=el('td',undefined,detailRow);cell.colSpan=8;const detail=el('details',undefined,cell);el('summary','Escenarios, tesis y fuentes · '+p.ticker,detail);
     const fields=el('div',undefined,detail,'lws-inputs');input(fields,'Horizonte propio · años',p.horizonYears,v=>{p.horizonYears=v;changed();},{min:1,max:30});input(fields,'Tope por emisor %',p.cap,v=>{p.cap=v;changed();},{percent:true,min:0,max:100});
+    if(p.operabilityLabel)el('p',p.operabilityLabel,detail,'lws-notice');
+    if(Number.isFinite(p.fixedValueEUR))input(fields,'Valor mantenido · EUR (archivo fechado)',p.fixedValueEUR,v=>{p.fixedValueEUR=v;changed();},{min:0});
+    if(Number.isFinite(p.monthlyContributionEUR))input(fields,'Aportación mensual · EUR',p.monthlyContributionEUR,v=>{p.monthlyContributionEUR=v;changed();},{min:0});
+    if(p.fixedWeight!=null&&!Number.isFinite(p.fixedValueEUR)&&p.coreResidualShare==null)input(fields,'Peso manual final %',p.fixedWeight,v=>{p.fixedWeight=v;changed();},{percent:true,min:0,max:100});
     const scenarios=table(detail,['Escenario','Retorno acumulado %','Probabilidad %']);
     ['Bajista','Neutro','Alcista'].forEach((label,i)=>{const tr=el('tr',undefined,scenarios);el('td',label,tr);input(el('td',undefined,tr),'',p.returns?.[i],v=>{p.returns??=[null,null,null];p.returns[i]=v;p.inputStatus='conditional';changed();},{percent:true,min:-100});input(el('td',undefined,tr),'',p.probabilities?.[i],v=>{p.probabilities??=[null,null,null];p.probabilities[i]=v;changed();},{percent:true,min:0,max:100});});
     const evidence=el('label','Fuente y razonamiento de las probabilidades',detail),area=el('textarea',undefined,evidence);area.value=p.probabilityEvidence||'';area.rows=2;area.onchange=()=>{p.probabilityEvidence=area.value;changed();};

@@ -1,11 +1,11 @@
-import { DB } from '../store.js?v=1f2ef2c';
-import { runChecks } from '../checks.js?v=1f2ef2c';
-import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtYM, fmtDate, cls, sum, todayISO, monthKey, addMonths, BUCKETS, TYPES, PALETTE, C as COL, help, typeColor, HELP, kpiTip, parseISO, isoDate, monthEnd } from '../util.js?v=1f2ef2c';
-import { SEL, selIsAll, inSelPos, inSelCash, perf, perfIndice, monthlySeries, monthlyValueSeries, firstOpDate, viviendaValue, groupBy, benchReturn, divAmounts, opAmounts, posOf, priceAt, fxAt, benchWeights, benchComposite, spReturn, spBench, BENCH_LEGS, cierres, cobertura, sinFiltros, expandirCubos, repartoPastel, comparable } from '../engine.js?v=1f2ef2c';
-import { chart, donut, legendHTML, pctTick, grid, avgDataset, endLabels } from '../charts.js?v=1f2ef2c';
-import { phaseLineHTML } from '../clock.js?v=1f2ef2c';
-import { recommendationsHTML } from '../recommend.js?v=1f2ef2c';
-import { openOpForm, openDivForm, openHolding } from '../forms.js?v=1f2ef2c';
+import { DB } from '../store.js?v=22c8819';
+import { runChecks } from '../checks.js?v=22c8819';
+import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtYM, fmtDate, cls, sum, todayISO, monthKey, addMonths, BUCKETS, TYPES, PALETTE, C as COL, help, typeColor, HELP, kpiTip, parseISO, isoDate, monthEnd } from '../util.js?v=22c8819';
+import { SEL, selIsAll, inSelPos, inSelCash, perf, perfIndice, monthlySeries, monthlyValueSeries, firstOpDate, viviendaValue, groupBy, benchReturn, divAmounts, opAmounts, posOf, priceAt, fxAt, benchWeights, benchComposite, spReturn, spBench, BENCH_LEGS, cierres, cobertura, sinFiltros, expandirCubos, repartoPastel, comparable } from '../engine.js?v=22c8819';
+import { chart, donut, legendHTML, pctTick, grid, avgDataset, endLabels } from '../charts.js?v=22c8819';
+import { phaseLineHTML } from '../clock.js?v=22c8819';
+import { recommendationsHTML } from '../recommend.js?v=22c8819';
+import { openOpForm, openDivForm, openHolding } from '../forms.js?v=22c8819';
 
 export function selDescription() {
   if (selIsAll()) return 'Toda la cartera de inversión';

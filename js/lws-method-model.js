@@ -1,5 +1,7 @@
 /** Standalone conditioned LWS diagnostics. No approved allocation or historical-return forecast.
  * validateConfig returns {valid, errors, warnings, eligible, pending}; invalid input never sizes capital.
+ * Enabled position.fixedWeight is a final base fraction, held unchanged even at zero Kelly fraction.
+ * Missing fixed returns keep diagnostics pending and global expected-log unavailable; no return is invented.
  * individualKelly returns a diagnostic object (kelly/weight null when pending).
  * options: capitalEUR, maxIterations, tolerance, ipfTolerance, ipfMaxIterations, onProgress(message, {phase, iterations?, error?, gap?}).
  * Amounts require explicit options.capitalEUR, config.capitalEUR/baseValueEUR or bundle.capitalEUR; absent is null.
@@ -52,6 +54,7 @@ function inspectPosition(p, parameters) {
 export function validateConfig(config) {
   const errors = [], warnings = [], pending = [], eligible = [];
   if (!config || typeof config !== 'object') return { valid: false, errors: ['Config missing'], warnings, eligible, pending };
+  if(config.operabilityInvalidCapital)errors.push('Operability with maintained EUR holdings requires a positive finite capital base');
   const p = config.parameters ?? {};
   for (const k of ['cashAnnual', 'kellyFraction', 'minimumCash', 'horizonYears', 'maxStocks'])
     if (!finite(p[k])) errors.push(`parameters.${k} must be finite`);
@@ -77,6 +80,8 @@ export function validateConfig(config) {
   if (!categories.has('cash')) errors.push('cash category required (without a cash position)');
   if (config.categories.every(c => c && finite(c.budget)) && Math.abs(sum(config.categories.map(c => c.budget)) - 1) > EPS)
     errors.push('Category budgets must sum to 1 (100%), including cash; budgets remain maxima');
+  const fixedByCategory = new Map();
+  let fixedTotal = 0;
   const ids = new Set();
   if (!Array.isArray(config.positions)) errors.push('positions must be an array');
   for (const pos of config.positions ?? []) {
@@ -88,14 +93,26 @@ export function validateConfig(config) {
     if (!['stock', 'vehicle', 'gold', 'crypto'].includes(pos.type)) errors.push(`Invalid type: ${id}`);
     if (!['conditional', 'pending'].includes(pos.inputStatus)) errors.push(`Invalid inputStatus: ${id}`);
     if (typeof pos.enabled !== 'boolean') errors.push(`enabled must be boolean: ${id}`);
+    if (pos.enabled && pos.fixedWeight != null) {
+      if (!finite(pos.fixedWeight) || pos.fixedWeight < 0 || pos.fixedWeight > 1) errors.push(`${id}: invalid fixedWeight`);
+      else {
+        if (!finite(pos.cap) || pos.cap < 0 || pos.cap > 1 || pos.fixedWeight > pos.cap + EPS) errors.push(`${id}: fixedWeight exceeds or lacks valid cap`);
+        fixedTotal += pos.fixedWeight;
+        fixedByCategory.set(pos.categoryId, (fixedByCategory.get(pos.categoryId) ?? 0) + pos.fixedWeight);
+      }
+    }
     const state = inspectPosition(pos, p);
     if (state.error) errors.push(`${id}: ${state.error}`);
     if (state.pending) pending.push({ id, reasons: state.reasons });
     else if (!state.error && pos.enabled) eligible.push(id);
   }
+  for (const [id, weight] of fixedByCategory) {
+    if (categories.has(id) && weight > categories.get(id).budget + EPS) errors.push(`Category ${id}: fixedWeight sum exceeds budget`);
+  }
+  if (fixedTotal > 1 - p.minimumCash + EPS) errors.push('fixedWeight sum conflicts with minimumCash reserve');
   const stocks = (config.positions ?? []).filter(x => x?.enabled && x.type === 'stock').length;
   if (stocks > p.maxStocks) warnings.push(`maxStocks: ${stocks} enabled stocks exceed ${p.maxStocks}; no automatic selection or forced slots`);
-  if (pending.length) warnings.push('Pending positions excluded only from conditioned diagnostics; allocations remain null and slots are not forced');
+  if (pending.length) warnings.push('Pending returns excluded from conditioned optimization; non-fixed pending allocations remain null, while explicit enabled fixedWeight is retained');
   warnings.push(p.probabilityMode === 'documented'
     ? 'Conditioned diagnostic only; probabilityEvidence records assertions, not independently validated forecasts or approval'
     : 'Conditioned diagnostic only; inherited probabilities are not validated forecasts or approvals');
@@ -182,8 +199,9 @@ function buildLaw(active, bundle, options) {
   return { rows, n, masses, excess, cash, ipf: { error, converged: error <= tolerance, iterations, tolerance, rows } };
 }
 
-function optimize(law, active, categories, parameters, options) {
-  const { rows, n, masses, excess, cash } = law;
+function optimize(law, active, categories, parameters, options, fixed = []) {
+  const { rows, masses, excess, cash } = law;
+  const n = active.length, stride = law.n;
   const groups = categories.filter(c => c.id !== 'cash').map(c => ({ budget: c.budget, indices: active.map((p, j) => p.categoryId === c.id ? j : -1).filter(j => j >= 0) }));
   const totalCap = 1 - parameters.minimumCash, caps = active.map(p => p.cap);
   // Euclidean projection: nested water filling of disjoint category caps and global cap.
@@ -213,11 +231,12 @@ function optimize(law, active, categories, parameters, options) {
     for (let i = 0; i < rows; i++) {
       if (masses[i] === 0) continue;
       let wealth = 1 + cash;
-      for (let j = 0; j < n; j++) wealth += w[j] * excess[i * n + j];
+      for (let j = 0; j < fixed.length; j++) wealth += fixed[j].fixedWeight * excess[i * stride + n + j];
+      for (let j = 0; j < n; j++) wealth += w[j] * excess[i * stride + j];
       if (wealth <= 0) return { value: -Infinity, gradient };
       value += masses[i] * Math.log(wealth);
       const factor = masses[i] / wealth;
-      for (let j = 0; j < n; j++) gradient[j] += factor * excess[i * n + j];
+      for (let j = 0; j < n; j++) gradient[j] += factor * excess[i * stride + j];
     }
     return { value, gradient };
   }
@@ -233,6 +252,8 @@ function optimize(law, active, categories, parameters, options) {
     return x;
   }
   let w = new Array(n).fill(0), e = evaluate(w), step = 1, gap = Infinity, iterations = 0;
+  if (!Number.isFinite(e.value)) return { weights: w, solver: { gap: null, converged: false, iterations: 0,
+    reason: 'nonpositive-initial-wealth', objective: null, method: 'projected-gradient-backtracking-BB-linear-oracle-KKT' } };
   const tolerance = options.tolerance ?? 1e-8, maxIterations = options.maxIterations ?? 1500;
   let reason = 'iteration-limit';
   for (; iterations < maxIterations; iterations++) {
@@ -329,7 +350,37 @@ function historicalRisk(positions, history, warnings) {
     scope: 'category-normalized plan exposures only; pending weights unknown; cash deterministic; historical means only center covariance' };
 }
 
+/** Explicit user operability overlay; preserves source aggregates in the private policy archive. */
+export function applyCoreOperability(config,bundle,capitalOverride){
+ const policy=bundle?.coreOperabilityPolicy;if(!policy||!config?.positions||!config?.categories)return config;
+ const next=structuredClone(config);
+ if(next.appliedCoreOperability!==policy.id){
+  next.positions=next.positions.filter(p=>!policy.legacyIds.includes(p.id)&&!policy.positions.some(q=>q.id===p.id));
+  next.positions.push(...structuredClone(policy.positions));
+  const additions=policy.addedCategories.filter(c=>!next.categories.some(x=>x.id===c.id));
+  const pool=next.categories.find(c=>c.id==='opportunities');next.operabilityFundingPool=pool?.budget??0;if(pool)pool.budget-=additions.reduce((a,c)=>a+c.budget,0);
+  next.categories.push(...structuredClone(additions));next.appliedCoreOperability=policy.id;
+ }
+ if(!Number.isFinite(next.operabilityFundingPool))next.operabilityFundingPool=next.categories.filter(c=>['opportunities','bonds','private-equity'].includes(c.id)).reduce((s,c)=>s+c.budget,0);
+ const base=capitalOverride??next.capitalEUR??next.baseValueEUR;
+ if(!(Number.isFinite(base)&&base>0)){next.operabilityInvalidCapital=true;return next;}
+ delete next.operabilityInvalidCapital;
+ if(Number.isFinite(base)&&base>0){
+  for(const p of next.positions)if(Number.isFinite(p.fixedValueEUR))p.fixedWeight=p.fixedValueEUR/base;
+  const core=next.categories.find(c=>c.id==='core');
+  const held=next.positions.filter(p=>p.enabled&&p.categoryId==='core'&&p.coreResidualShare==null&&p.fixedWeight!=null).reduce((a,p)=>a+p.fixedWeight,0);
+  const remaining=Math.max(0,(core?.budget??0)-held);
+  for(const p of next.positions)if(p.coreResidualShare!=null)p.fixedWeight=remaining*p.coreResidualShare;
+  const rf=next.categories.find(c=>c.id==='bonds'),pe=next.categories.find(c=>c.id==='private-equity'),pool=next.categories.find(c=>c.id==='opportunities');
+  if(rf)rf.budget=next.positions.filter(p=>p.enabled&&p.categoryId==='bonds').reduce((s,p)=>s+(p.fixedWeight??0),0);
+  if(pe)pe.budget=next.positions.filter(p=>p.enabled&&p.categoryId==='private-equity').reduce((s,p)=>s+(p.fixedWeight??0),0);
+  if(pool)pool.budget=next.operabilityFundingPool-(rf?.budget??0)-(pe?.budget??0);
+ }
+ return next;
+}
+
 export async function calculateLWS(config, bundle, options = {}) {
+  config=applyCoreOperability(config,bundle,options.capitalEUR);
   const validation = validateConfig(config), warnings = [...validation.warnings];
   const pending = validation.pending;
   const result = { status: 'invalid', approved: false, positions: [], cashFull: null, cashFractional: null,
@@ -343,23 +394,30 @@ export async function calculateLWS(config, bundle, options = {}) {
   reportProgress(options, { phase: 'start' });
   const parameters = config.parameters;
   result.positions = config.positions.map(p => ({ ...p, diagnostic: individualKelly(p, parameters), fullWeight: null, weight: null, amountEUR: null, lwsWeight: null }));
-  const active = result.positions.filter(p => p.enabled && p.diagnostic.status === 'conditional');
-  for (const p of result.positions) if (!p.enabled && p.diagnostic.status !== 'pending') { p.fullWeight = 0; p.weight = 0; p.lwsWeight = 0; }
-  if (pending.length) warnings.push('Allocation is a subset diagnostic; pending allocations and their unknown risk remain null, not rejection zeros');
+  const fixed = result.positions.filter(p => p.enabled && p.fixedWeight != null);
+  const active = result.positions.filter(p => p.enabled && p.fixedWeight == null && p.diagnostic.status === 'conditional');
+  const fixedTotal = sum(fixed.map(p => p.fixedWeight));
+  const freeCategories = config.categories.map(c => ({ ...c, budget: Math.max(0, c.budget - sum(fixed.filter(p => p.categoryId === c.id).map(p => p.fixedWeight))) }));
+  const allocated = [...active, ...fixed];
+  for (const p of fixed) { p.weight = p.fixedWeight; p.fullWeight = p.fixedWeight; p.lwsWeight = p.fixedWeight; }
+  for (const p of result.positions) if (!p.enabled && (p.fixedWeight != null || p.diagnostic.status !== 'pending')) { p.fullWeight = 0; p.weight = 0; p.lwsWeight = 0; }
+  if (pending.length) warnings.push('Allocation is a subset diagnostic; missing returns do not become zero returns or rejection weights. Explicit fixed holdings remain allocated with pending diagnostics.');
   const capital = options.capitalEUR ?? config.capitalEUR ?? config.baseValueEUR ?? bundle?.capitalEUR;
   if (capital != null && (!finite(capital) || capital < 0)) { result.errors.push('capitalEUR must be nonnegative and finite'); return result; }
   if (!finite(capital)) warnings.push('capitalEUR missing; amountEUR remains null');
   let solution;
-  if (active.length) {
+  if (active.length || fixed.some(p => p.fixedWeight > 0)) {
     try {
-      const law = buildLaw(active, bundle, options);
+      if (fixed.some(p => p.fixedWeight > 0 && p.diagnostic.status !== 'conditional')) throw Error('Fixed holding returns pending; global expected-log diagnostic unavailable, fixed allocation retained');
+      const knownFixed = fixed.filter(p => p.fixedWeight > 0);
+      const law = buildLaw([...active, ...knownFixed], bundle, options);
       result.solver.ipf = law.ipf;
       if (!law.ipf.converged) throw Error('Global IPF did not converge; category calculations remain independent');
-      solution = optimize(law, active, config.categories, parameters, options);
+      solution = optimize(law, active, freeCategories, {...parameters, minimumCash: Math.min(1, parameters.minimumCash + fixedTotal)}, options, knownFixed);
       result.solver = { ...solution.solver, ipf: law.ipf };
     } catch (error) { warnings.push(error.message); solution = {weights: active.map(()=>null), solver:{gap:null,converged:false,reason:'global-diagnostic-unavailable'}};result.solver={...result.solver,...solution.solver}; }
   } else solution = { weights: [], solver: { gap: 0, converged: true, iterations: 0, reason: 'no-eligible-positions' } };
-  if (!active.length) result.solver = solution.solver;
+  if (!active.length && !fixed.some(p => p.fixedWeight > 0)) result.solver = solution.solver;
   const globalConverged = result.solver.converged;
   result.solver.global = {...result.solver};
   if (!globalConverged) result.solver.iterateWeights = Object.fromEntries(active.map((p,j)=>[idOf(p),solution.weights[j]]));
@@ -369,7 +427,7 @@ export async function calculateLWS(config, bundle, options = {}) {
   // The fraction scales internal scores; normalization preserves each strategic budget.
   // Final weights are a category policy allocation, not the unconstrained log optimum.
   result.solver.categories = {};
-  for (const c of config.categories.filter(c => c.id !== 'cash')) {
+  for (const c of freeCategories.filter(c => c.id !== 'cash')) {
     const group = active.filter(p => p.categoryId === c.id);
     if (group.length && c.budget > 0) {
       try {
@@ -397,7 +455,7 @@ export async function calculateLWS(config, bundle, options = {}) {
     }
     if (remaining > EPS && c.budget > 0) warnings.push(`Category ${c.id}: unallocated budget retained in cash (pending inputs, no positive joint support, zero fraction or position caps)`);
   }
-  const assigned = sum(active.map(p => p.weight));
+  const assigned = sum(allocated.map(p => p.weight));
   if (assigned > 1 - parameters.minimumCash + EPS) {
     result.status = 'invalid'; result.errors.push('Category allocation conflicts with minimumCash; adjust category budgets or reserve, without silently scaling final weights');
     for (const p of active) { p.weight = null; p.amountEUR = null; }
@@ -406,8 +464,9 @@ export async function calculateLWS(config, bundle, options = {}) {
   result.solver.gap = Math.max(0,...Object.values(result.solver.categories).map(s=>s.gap));
   result.solver.tolerance = options.tolerance ?? 1e-8;
   result.allocationPolicy = 'fraction-within-category-normalized';
+  if (fixed.length) warnings.push('Explicit fixedWeight holdings are final base fractions: fixed first, free category budgets reduced, no scaling or contribution forecast applied.');
   warnings.push('Final category-normalized weights preserve strategic budgets where eligible capacity permits; they are not the global joint log-optimal vector. A common positive Kelly fraction cancels in normalization.');
-  for (const c of config.categories.filter(c => c.id !== 'cash')) {
+  for (const c of freeCategories.filter(c => c.id !== 'cash')) {
     const members = active.filter(p => p.categoryId === c.id);
     const deterministic = members.filter(p => p.diagnostic.deterministicPositiveExcess);
     const denominator = sum(members.map(p => p.diagnostic.lwsScore ?? 0));
@@ -417,14 +476,14 @@ export async function calculateLWS(config, bundle, options = {}) {
     }
   }
   // Scores are a separate category-normalized comparison, not the constrained joint optimizer.
-  const lwsSum = sum(active.map(p => p.lwsWeight));
+  const lwsSum = sum(allocated.map(p => p.lwsWeight));
   if (lwsSum > 1 - parameters.minimumCash + EPS) warnings.push('Category-normalized LWS comparison exceeds joint investable budget; not an executable allocation');
   for (const p of result.positions) if (p.weight !== null && finite(capital)) p.amountEUR = p.weight * capital;
-  result.cashFull = globalConverged ? 1 - sum(active.map(p => p.fullWeight)) : null;
-  result.cashFractional = 1 - sum(active.map(p => p.weight));
+  result.cashFull = globalConverged ? 1 - sum(allocated.map(p => p.fullWeight)) : null;
+  result.cashFractional = 1 - sum(allocated.map(p => p.weight));
   result.categoryDetails = config.categories.map(c => ({ id: c.id, budget: c.budget,
-    fullWeight: !globalConverged ? null : c.id === 'cash' ? result.cashFull : sum(active.filter(p => p.categoryId === c.id).map(p => p.fullWeight)),
-    weight: c.id === 'cash' ? result.cashFractional : sum(active.filter(p => p.categoryId === c.id).map(p => p.weight)),
+    fullWeight: !globalConverged ? null : c.id === 'cash' ? result.cashFull : sum(allocated.filter(p => p.categoryId === c.id).map(p => p.fullWeight)),
+    weight: c.id === 'cash' ? result.cashFractional : sum(allocated.filter(p => p.categoryId === c.id).map(p => p.weight)),
     pending: result.positions.filter(p => p.categoryId === c.id && p.diagnostic.status === 'pending').map(idOf) }));
   result.categoryWeights = Object.fromEntries(result.categoryDetails.map(c => [c.id, c.weight]));
   result.historyRisk = historicalRisk(result.positions, bundle?.history, warnings);
