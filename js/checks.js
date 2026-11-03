@@ -1,10 +1,10 @@
 // Comprobaciones de coherencia: cada operación tiene que mover el efectivo y las cantidades de forma coherente.
 // Devuelve alarmas con nivel (alta, media, info) para la campana de la cabecera.
-import { DB } from './store.js?v=965a62c';
-import { compute, replay, opAmounts, divAmounts, posOf, acctOf, acctName, defaultBucket, expandirCubos, saludComposiciones } from './engine.js?v=965a62c';
-import { fmtEUR, fmtN, fmtDate, todayISO, OP_LABEL, daysBetween, addDays, sum } from './util.js?v=965a62c';
-import { tesisAEscenarios } from './kelly.js?v=965a62c';
-import { targets, ORO_IDS } from './recommend.js?v=965a62c';
+import { DB } from './store.js?v=ca5cfee';
+import { compute, replay, opAmounts, divAmounts, posOf, acctOf, acctName, defaultBucket, expandirCubos, saludComposiciones } from './engine.js?v=ca5cfee';
+import { fmtEUR, fmtN, fmtDate, todayISO, OP_LABEL, daysBetween, addDays, sum } from './util.js?v=ca5cfee';
+import { tesisAEscenarios } from './kelly.js?v=ca5cfee';
+import { targets, ORO_IDS } from './recommend.js?v=ca5cfee';
 
 const KNOWN = new Set(['buy', 'sell', 'switch', 'switchBuy', 'spinOff', 'spinOffBuy', 'split', 'scrip', 'stakeReward', 'interest', 'deposit', 'withdrawal', 'commission', 'optionBuy', 'optionSell', 'transfer', 'adjust']);
 const CASH_MOVES = new Set(['buy', 'sell', 'deposit', 'withdrawal', 'interest', 'commission', 'optionBuy', 'optionSell', 'transfer']);

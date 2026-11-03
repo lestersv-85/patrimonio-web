@@ -1,4 +1,4 @@
-import {calculateLWS,validateConfig,applyCoreOperability} from './lws-method-model.js?v=965a62c';
+import {calculateLWS,validateConfig,applyCoreOperability} from './lws-method-model.js?v=ca5cfee';
 
 const euro=v=>Number.isFinite(v)?new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v):'Pendiente';
 const pct=v=>Number.isFinite(v)?new Intl.NumberFormat('es-ES',{style:'percent',maximumFractionDigits:2}).format(v):'Pendiente';
@@ -77,6 +77,7 @@ export async function mountLWSMethod(host,{loadData,loadSaved,saveSaved,loadHist
   const importLabel=el('label','Importar configuración',toolbar,'lws-button');const upload=el('input',undefined,importLabel);upload.type='file';upload.accept='.json,application/json';upload.className='lws-file';
   upload.onchange=async()=>{try{const file=upload.files?.[0];if(!file)return;if(file.size>1_000_000)throw Error('Importa solo la configuración, sin el paquete de series.');const parsed=JSON.parse(await file.text()),next=parsed.config||parsed;const check=validateConfig(next);if(check.errors?.length)throw Error(check.errors.join(' · '));config=next;changed();}catch(e){error=e.message;render();}};
   el('p','DIAGNÓSTICO CONDICIONADO · los escenarios heredados y la dependencia simulada no son probabilidades futuras comprobadas.',host,'lws-notice');
+  if(config.managedMixedValueEUR!=null)el('p',`Mixto Santander mantenido: ${euro(config.managedMixedValueEUR)} de referencia aproximada; sin órdenes. Reparto RV/RF aproximado del modelo, no composición actual verificada. La valoración puede cambiar y su peso se recalcula.`,host,'lws-notice');
   if(config.appliedCoreOperability)el('p','PP mantenido por su valor registrado y la aportación configurada. Núcleo restante repartido entre los fondos operables según la regla configurada. Agregados desglosados una sola vez; RF fuera del NúcleoRV. Valoraciones del archivo, no saldos actuales.',host,'lws-notice');
   if(dirty)el('p','Entradas modificadas: resultados anteriores ocultos hasta volver a calcular.',host,'lws-notice');
   if(error)el('p',error,host,'lws-error');
@@ -105,6 +106,7 @@ export async function mountLWSMethod(host,{loadData,loadSaved,saveSaved,loadHist
   const settings=el('section',undefined,host,'lws-panel');el('h3','Configuración del método',settings);const grid=el('div',undefined,settings,'lws-inputs');
   input(grid,'Base del ejercicio · EUR',config.baseValueEUR,v=>{config.baseValueEUR=v;changed();},{min:0.01});
   if(config.appliedCoreOperability)input(grid,'Cupo conjunto Oportunidades / EQT / RF %',config.operabilityFundingPool,v=>{config.operabilityFundingPool=v;changed();},{percent:true,min:0,max:100});
+  if(config.managedMixedValueEUR!=null)input(grid,'Mixto Santander · valoración mantenida EUR',config.managedMixedValueEUR,v=>{config.managedMixedValueEUR=v;changed();},{min:0});
   input(grid,'Liquidez anual · hipótesis %',params.cashAnnual,v=>{params.cashAnnual=v;changed();},{percent:true,min:-99.99});
   input(grid,'Fracción Kelly interna %',params.kellyFraction,v=>{params.kellyFraction=v;changed();},{percent:true,min:0,max:100});
   input(grid,'Reserva mínima %',params.minimumCash,v=>{params.minimumCash=v;changed();},{percent:true,min:0,max:100});
@@ -139,7 +141,7 @@ export async function mountLWSMethod(host,{loadData,loadSaved,saveSaved,loadHist
     const detailRow=el('tr',undefined,body),cell=el('td',undefined,detailRow);cell.colSpan=8;const detail=el('details',undefined,cell);el('summary','Escenarios, tesis y fuentes · '+p.ticker,detail);
     const fields=el('div',undefined,detail,'lws-inputs');input(fields,'Horizonte propio · años',p.horizonYears,v=>{p.horizonYears=v;changed();},{min:1,max:30});input(fields,'Tope por emisor %',p.cap,v=>{p.cap=v;changed();},{percent:true,min:0,max:100});
     if(p.operabilityLabel)el('p',p.operabilityLabel,detail,'lws-notice');
-    if(Number.isFinite(p.fixedValueEUR))input(fields,'Valor mantenido · EUR (archivo fechado)',p.fixedValueEUR,v=>{p.fixedValueEUR=v;changed();},{min:0});
+    if(Number.isFinite(p.fixedValueEUR)){const valueField=input(fields,'Valor mantenido · EUR (archivo fechado)',p.fixedValueEUR,v=>{p.fixedValueEUR=v;changed();},{min:0});if(p.id===bundle.coreOperabilityPolicy?.managedValuationUpdate?.RVComponentId){valueField.disabled=true;valueField.title='Editar el valor total del mixto en la configuración; ambas patas se derivan juntas.';}}
     if(Number.isFinite(p.monthlyContributionEUR))input(fields,'Aportación mensual · EUR',p.monthlyContributionEUR,v=>{p.monthlyContributionEUR=v;changed();},{min:0});
     if(p.fixedWeight!=null&&!Number.isFinite(p.fixedValueEUR)&&p.coreResidualShare==null)input(fields,'Peso manual final %',p.fixedWeight,v=>{p.fixedWeight=v;changed();},{percent:true,min:0,max:100});
     const scenarios=table(detail,['Escenario','Retorno acumulado %','Probabilidad %']);

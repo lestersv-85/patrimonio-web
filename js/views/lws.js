@@ -1,6 +1,6 @@
 // Adaptador privado: los datos y la configuración viven separados de settings.
-import { DB } from '../store.js?v=965a62c';
-import { esc } from '../util.js?v=965a62c';
+import { DB } from '../store.js?v=ca5cfee';
+import { esc } from '../util.js?v=ca5cfee';
 
 export function createLwsAdapters() {
   async function context() {
@@ -62,7 +62,7 @@ export function renderLws(v) {
   v.innerHTML = `<h2>Método LWS</h2>${DB.mode === 'local' ? '<p class="note">Modo local: los datos privados no se descargan. Importa una base JSON desde el archivo para utilizar el método; guardar en la nube requiere sesión.</p>' : ''}<div class="lws-method-host"><p class="muted">Cargando método…</p></div>`;
   const host = v.querySelector('.lws-method-host');
   // Carga diferida: la ausencia temporal del módulo compartido no bloquea otras rutas.
-  import('../lws-method-ui.js?v=965a62c').then(async ({ mountLWSMethod }) => {
+  import('../lws-method-ui.js?v=ca5cfee').then(async ({ mountLWSMethod }) => {
     if (!host.isConnected) return;
     await mountLWSMethod(host, createLwsAdapters());
   }).catch(error => {

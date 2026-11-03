@@ -1,10 +1,10 @@
-import { DB } from '../store.js?v=965a62c';
-import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtYM, fmtDate, cls, sum, todayISO, monthKey, addMonths, monthEnd, isoDate, parseISO, help, C as COL, kpiTip, addDays } from '../util.js?v=965a62c';
-import { SEL, selIsAll, inSelPos, inSelCash, perf, monthlySeries, firstOpDate, replay, opAmounts, divAmounts, posOf, benchReturn, spReturn, spBench, viviendaValue, priceAt, fxAt, comparable } from '../engine.js?v=965a62c';
-import { chart, bars, line, grid, pctTick, avgDataset, endLabels } from '../charts.js?v=965a62c';
-import { openHolding } from '../forms.js?v=965a62c';
-import { selDescription } from './inicio.js?v=965a62c';
-import { exportPerfCSV } from '../export.js?v=965a62c';
+import { DB } from '../store.js?v=ca5cfee';
+import { $, $$, esc, fmtEUR, fmtK, fmtN, fmtPct, fmtYM, fmtDate, cls, sum, todayISO, monthKey, addMonths, monthEnd, isoDate, parseISO, help, C as COL, kpiTip, addDays } from '../util.js?v=ca5cfee';
+import { SEL, selIsAll, inSelPos, inSelCash, perf, monthlySeries, firstOpDate, replay, opAmounts, divAmounts, posOf, benchReturn, spReturn, spBench, viviendaValue, priceAt, fxAt, comparable } from '../engine.js?v=ca5cfee';
+import { chart, bars, line, grid, pctTick, avgDataset, endLabels } from '../charts.js?v=ca5cfee';
+import { openHolding } from '../forms.js?v=ca5cfee';
+import { selDescription } from './inicio.js?v=ca5cfee';
+import { exportPerfCSV } from '../export.js?v=ca5cfee';
 
 function adjValOf(a, b) {
   return sum(DB.operations.filter(o => o.type === 'adjust' && o.date > a && o.date <= b && inSelPos(posOf(o.position_id) || {}, o.account_id)), o => { const p = priceAt(o.position_id, o.date); const pos = posOf(o.position_id); return (o.qty || 0) * (p ? p.price : (o.price || 0)) * fxAt(pos?.currency, o.date); });

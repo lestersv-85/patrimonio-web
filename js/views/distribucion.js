@@ -1,10 +1,10 @@
-import { DB } from '../store.js?v=965a62c';
-import { $, $$, esc, fmtEUR, fmtK, fmtN, cls, sum, BUCKETS, TYPES, DRAWERS, PALETTE, C as COL, help, typeColor, accountColor, ccyColor, ESTILOS, ESTILO_COLOR} from '../util.js?v=965a62c';
-import { inSelPos, inSelCash, selIsAll, acctName, groupBy, viviendaValue, expandirCubos, saludComposiciones } from '../engine.js?v=965a62c';
-import { donut, legendHTML } from '../charts.js?v=965a62c';
-import { openModal } from '../forms.js?v=965a62c';
-import { selDescription } from './inicio.js?v=965a62c';
-import { targets } from '../recommend.js?v=965a62c';
+import { DB } from '../store.js?v=ca5cfee';
+import { $, $$, esc, fmtEUR, fmtK, fmtN, cls, sum, BUCKETS, TYPES, DRAWERS, PALETTE, C as COL, help, typeColor, accountColor, ccyColor, ESTILOS, ESTILO_COLOR} from '../util.js?v=ca5cfee';
+import { inSelPos, inSelCash, selIsAll, acctName, groupBy, viviendaValue, expandirCubos, saludComposiciones } from '../engine.js?v=ca5cfee';
+import { donut, legendHTML } from '../charts.js?v=ca5cfee';
+import { openModal } from '../forms.js?v=ca5cfee';
+import { selDescription } from './inicio.js?v=ca5cfee';
+import { targets } from '../recommend.js?v=ca5cfee';
 
 export function renderDistribucion(v, C, { UI, render, filterBarHTML, bindFilterBar }) {
   const rows = C.rows.filter(r => inSelPos(r.p, r.accountId)); let cash = 0; for (const a in C.cashEUR) if (inSelCash(a)) cash += C.cashEUR[a];

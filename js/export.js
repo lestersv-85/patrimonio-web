@@ -1,7 +1,7 @@
 // Exportación: CSV (punto y coma, coma decimal) y Excel con SheetJS (global XLSX)
-import { DB } from './store.js?v=965a62c';
-import { todayISO, r2, TYPES, BUCKETS, DRAWERS, OP_LABEL, toast, monthKey } from './util.js?v=965a62c';
-import { acctName, posOf, opAmounts, divAmounts, defaultBucket, monthlySeries, firstOpDate, isInvest } from './engine.js?v=965a62c';
+import { DB } from './store.js?v=ca5cfee';
+import { todayISO, r2, TYPES, BUCKETS, DRAWERS, OP_LABEL, toast, monthKey } from './util.js?v=ca5cfee';
+import { acctName, posOf, opAmounts, divAmounts, defaultBucket, monthlySeries, firstOpDate, isInvest } from './engine.js?v=ca5cfee';
 
 const csvNum = n => (n == null || n === '' || isNaN(n)) ? '' : String(n).replace('.', ',');
 function toCSV(headers, rows) { const q = s => { s = String(s ?? ''); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }; return '﻿' + [headers, ...rows].map(r => r.map(q).join(';')).join('\r\n'); }

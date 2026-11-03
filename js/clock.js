@@ -1,6 +1,6 @@
 // Reloj de inversión: lectura estimada (calculada por jobs/fetch_market.py) y cabecera explicativa
-import { DB } from './store.js?v=965a62c';
-import { PHASES, fmtN, fmtPct, fmtDate, esc } from './util.js?v=965a62c';
+import { DB } from './store.js?v=ca5cfee';
+import { PHASES, fmtN, fmtPct, fmtDate, esc } from './util.js?v=ca5cfee';
 
 export function currentPhase() {
   const readings = [...(DB.clock || [])].sort((a, b) => a.month.localeCompare(b.month));

@@ -1,3 +1,3 @@
 // Atajo para las pruebas de node: expone el mismo objeto DB que store.js sin arrancar la web
 // (store.js abre sesión contra Supabase al importarse). Solo lo usa jobs/test_motor.mjs.
-export { DB } from './store.js?v=965a62c';
+export { DB } from './store.js?v=ca5cfee';

@@ -1,7 +1,7 @@
 // Motor de cálculo: posiciones, caja por divisa, coste medio y FIFO, valoración a fecha,
 // flujos de la selección, MWR (TIR), TWR (Dietz modificado), series mensuales.
-import { DB } from './store.js?v=965a62c';
-import { daysBetween, monthEnd, monthKey, addMonths, todayISO, sum, num } from './util.js?v=965a62c';
+import { DB } from './store.js?v=ca5cfee';
+import { daysBetween, monthEnd, monthKey, addMonths, todayISO, sum, num } from './util.js?v=ca5cfee';
 
 // ---------- lookups ----------
 const sortedKeysCache = new WeakMap();

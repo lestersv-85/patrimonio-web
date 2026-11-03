@@ -1,6 +1,6 @@
 // Acceso a datos: Supabase (nube) o copia local (snapshot) con cambios en localStorage.
-import { CONFIG } from './config.js?v=965a62c';
-import { toast, uid } from './util.js?v=965a62c';
+import { CONFIG } from './config.js?v=ca5cfee';
+import { toast, uid } from './util.js?v=ca5cfee';
 
 export const DB = {
   mode: 'local', client: null, user: null, ready: false,

@@ -54,6 +54,7 @@ function inspectPosition(p, parameters) {
 export function validateConfig(config) {
   const errors = [], warnings = [], pending = [], eligible = [];
   if (!config || typeof config !== 'object') return { valid: false, errors: ['Config missing'], warnings, eligible, pending };
+  if(config.managedValuationError)errors.push(config.managedValuationError);
   if(config.operabilityInvalidCapital)errors.push('Operability with maintained EUR holdings requires a positive finite capital base');
   const p = config.parameters ?? {};
   for (const k of ['cashAnnual', 'kellyFraction', 'minimumCash', 'horizonYears', 'maxStocks'])
@@ -353,14 +354,30 @@ function historicalRisk(positions, history, warnings) {
 /** Explicit user operability overlay; preserves source aggregates in the private policy archive. */
 export function applyCoreOperability(config,bundle,capitalOverride){
  const policy=bundle?.coreOperabilityPolicy;if(!policy||!config?.positions||!config?.categories)return config;
- const next=structuredClone(config);
+ const next=structuredClone(config);let migratedCore=false;
  if(next.appliedCoreOperability!==policy.id){
   next.positions=next.positions.filter(p=>!policy.legacyIds.includes(p.id)&&!policy.positions.some(q=>q.id===p.id));
   next.positions.push(...structuredClone(policy.positions));
   const additions=policy.addedCategories.filter(c=>!next.categories.some(x=>x.id===c.id));
   const pool=next.categories.find(c=>c.id==='opportunities');next.operabilityFundingPool=pool?.budget??0;if(pool)pool.budget-=additions.reduce((a,c)=>a+c.budget,0);
-  next.categories.push(...structuredClone(additions));next.appliedCoreOperability=policy.id;
+  next.categories.push(...structuredClone(additions));next.appliedCoreOperability=policy.id;migratedCore=true;
  }
+ const valuation=policy.managedValuationUpdate;
+ if(valuation){
+  const newRevision=next.appliedManagedValuations?.[valuation.parentId]!==valuation.revision;
+  const target=newRevision?valuation.valueEUR:(next.managedMixedValueEUR??valuation.valueEUR);
+  const rv=next.positions.find(p=>p.id===valuation.RVComponentId),rf=next.positions.find(p=>p.id===valuation.RFComponentId),share=valuation.lookThroughRVFraction;
+  if(rv&&rf&&Number.isFinite(rv.fixedValueEUR)&&Number.isFinite(rf.fixedValueEUR)&&Number.isFinite(target)&&target>=0&&share>0&&share<1){
+   const priorParent=migratedCore&&newRevision?valuation.previousValueEUR:rv.fixedValueEUR/share;
+   const otherRF=migratedCore&&newRevision?valuation.otherRFValueEUR:rf.fixedValueEUR-priorParent*(1-share),delta=target-priorParent;
+   if(otherRF < -1e-8){next.managedValuationError='Managed mixed RF decomposition inconsistent with retained holdings';return next;}
+   rv.fixedValueEUR=target*share;rf.fixedValueEUR=target*(1-share)+Math.max(0,otherRF);
+   if(Number.isFinite(next.baseValueEUR))next.baseValueEUR+=delta;
+   if(Number.isFinite(next.capitalEUR))next.capitalEUR+=delta;
+   next.managedMixedValueEUR=target;next.appliedManagedValuations??={};next.appliedManagedValuations[valuation.parentId]=valuation.revision;
+  }else{next.managedValuationError='Managed mixed valuation needs both maintained components and an explicit finite value and split';return next;}
+ }
+ delete next.managedValuationError;
  if(!Number.isFinite(next.operabilityFundingPool))next.operabilityFundingPool=next.categories.filter(c=>['opportunities','bonds','private-equity'].includes(c.id)).reduce((s,c)=>s+c.budget,0);
  const base=capitalOverride??next.capitalEUR??next.baseValueEUR;
  if(!(Number.isFinite(base)&&base>0)){next.operabilityInvalidCapital=true;return next;}
